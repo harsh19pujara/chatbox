@@ -1,4 +1,5 @@
 import 'package:chatting_app/Screens/home/chatScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class MessageScreen extends StatefulWidget {
@@ -37,12 +38,29 @@ class _MessageScreenState extends State<MessageScreen> {
                 borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(40),
                     topRight: Radius.circular(40))),
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: 15,
-              itemBuilder: (context, index) {
-                return recentChatWidget();
+            child: StreamBuilder(
+              stream: FirebaseFirestore.instance.collection("chatRooms").where("lastMsg",isNotEqualTo: "").snapshots(),
+              builder: (context, snapshot) {
+                if(snapshot.hasData){
+                  if(snapshot.data!.docs.isNotEmpty){
+                    return ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: snapshot.data!.docs.length,
+                      itemBuilder: (context, index) {
+                        return recentChatWidget();
+                      },
+                    );
+                  }
+                  else{
+                    return Text("Start Chatting With Friends");
+
+                  }
+                }else{
+                  return Text("Start Chatting With Friends");
+                }
+
               },
+
             ),
           ),
         )
