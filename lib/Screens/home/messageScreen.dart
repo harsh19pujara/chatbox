@@ -1,9 +1,12 @@
+import 'package:chatting_app/Model/chatModel.dart';
+import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/home/chatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class MessageScreen extends StatefulWidget {
-  const MessageScreen({Key? key}) : super(key: key);
+  const MessageScreen({Key? key, required this.userData}) : super(key: key);
+  final UserModel userData;
 
   @override
   State<MessageScreen> createState() => _MessageScreenState();
@@ -21,9 +24,7 @@ class _MessageScreenState extends State<MessageScreen> {
             scrollDirection: Axis.horizontal,
             itemCount: 8,
             itemBuilder: (context, index) {
-              return index == 0
-                  ? ownStory('assets/images/dp1.png')
-                  : storyWidget('assets/images/dp2.png');
+              return index == 0 ? ownStory('assets/images/dp1.png') : storyWidget('assets/images/dp2.png');
             },
           ),
         ),
@@ -32,35 +33,39 @@ class _MessageScreenState extends State<MessageScreen> {
         ),
         Expanded(
           child: Container(
+            width: MediaQuery.of(context).size.width,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
             decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40))),
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40))),
             child: StreamBuilder(
-              stream: FirebaseFirestore.instance.collection("chatRooms").where("lastMsg",isNotEqualTo: "").snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection("chatRooms")
+                  .where("participants",arrayContains: widget.userData.id.toString())
+              .orderBy("lastMsgTime",descending: true)
+                  .snapshots(),
               builder: (context, snapshot) {
-                if(snapshot.hasData){
-                  if(snapshot.data!.docs.isNotEmpty){
+                // print(snapshot.data!.docs.toList());
+                if (snapshot.hasData) {
+                  if (snapshot.data!.docs.isNotEmpty) {
                     return ListView.builder(
                       physics: const BouncingScrollPhysics(),
                       itemCount: snapshot.data!.docs.length,
                       itemBuilder: (context, index) {
-                        return recentChatWidget();
+                        return recentChatWidget(snapshot.data!.docs[index].data());
                       },
                     );
+                  } else {
+                    return const Text("Error Fetching Data", style: TextStyle(fontSize: 18));
                   }
-                  else{
-                    return Text("Start Chatting With Friends");
-
-                  }
-                }else{
-                  return Text("Start Chatting With Friends");
+                } else {
+                  return const Center(
+                      child: Text(
+                    "Start Chatting With Friends",
+                    style: TextStyle(fontSize: 18),
+                  ));
                 }
-
               },
-
             ),
           ),
         )
@@ -86,86 +91,112 @@ class _MessageScreenState extends State<MessageScreen> {
     );
   }
 
-  Widget recentChatWidget() {
-    return GestureDetector(
-      onTap: (){
-        // Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatScreen(),));
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 10),
-        height: 70,
-        // decoration: BoxDecoration(
-          // borderRadius: BorderRadius.circular(100)
-        // ),
-        // color: Colors.grey,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: Row(
-              children: [
-                Stack(children: [
-                  const CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/dp3.png'),
-                    radius: 26,
-                  ),
-                  Positioned(
-                    bottom: 3,
-                    right: 3,
+  Widget recentChatWidget(Map<String, dynamic> data) {
+    String? otherUser;
+    ChatModel chatData = ChatModel.fromJson(data);
+    for (var element in chatData.participants!) {
+      if (element.toString() != widget.userData.id.toString()) {
+        otherUser = element;
+        // print("other user = " + otherUser);
+      }
+    }
+    print(data.toString());
+    return otherUser != null
+        ? FutureBuilder(
+            future: FirebaseFirestore.instance.collection("users").doc(otherUser).get(),
+            builder: (context, snapshot) {
+              if (snapshot.data != null) {
+                UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
+                // print("user data" + searchedUser.toString());
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ChatScreen(chatRoom: chatData, currentUser: widget.userData, searchedUser: searchedUser),
+                        ));
+                  },
+                  child: Container(
+                    // color:Colors.blueAccent,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    height: 70,
+                    // decoration: BoxDecoration(
+                    // borderRadius: BorderRadius.circular(100)
+                    // ),
+                    // color: Colors.grey,
                     child: Container(
-                      height: 10,
-                      width: 10,
-                      // alignment: AlignmentDirectional.bottomEnd,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: Color(0xFF0FE16D)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      child: Row(
+                        children: [
+                          Stack(children: [
+                            const CircleAvatar(
+                              backgroundImage: AssetImage('assets/images/dp3.png'),
+                              radius: 26,
+                            ),
+                            Positioned(
+                              bottom: 3,
+                              right: 3,
+                              child: Container(
+                                height: 10,
+                                width: 10,
+                                // alignment: AlignmentDirectional.bottomEnd,
+                                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF0FE16D)),
+                              ),
+                            )
+                          ]),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          SizedBox(
+                            width: 150,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  searchedUser.name.toString(),
+                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                                ),
+                                Text(
+                                  chatData.lastMsg.toString(),
+                                  style: const TextStyle(fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              ],
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 25,
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: const [
+                                Text(
+                                  '5 min ago',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: Color(0xFFF04A4C),
+                                  child: Text('5'),
+                                )
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
                     ),
-                  )
-                ]),
-                const SizedBox(
-                  width: 10,
-                ),
-                SizedBox(
-                  width: 150,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Emilia Clark',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-                      ),
-                      Text(
-                        'Latest Message Message Message',
-                        style: TextStyle(fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      )
-                    ],
                   ),
-                ),
-                const SizedBox(
-                  width: 25,
-                ),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: const [
-                      Text(
-                        '5 min ago',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      CircleAvatar(
-                        radius: 12,
-                        backgroundColor: Color(0xFFF04A4C),
-                        child: Text('5'),
-                      )
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
-
-      ),
-    );
+                );
+              } else {
+                return const Center(child: CircularProgressIndicator());
+              }
+            },
+          )
+        : const Center(child: CircularProgressIndicator());
   }
 
   Widget ownStory(String img) {
@@ -174,21 +205,20 @@ class _MessageScreenState extends State<MessageScreen> {
         children: [
           storyWidget(img),
           Positioned(
-            bottom: 3,
+              bottom: 3,
               right: 3,
               child: Container(
-            height: 15,
-            width: 15,
-            decoration:
-                const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: const Center(
-              child: Icon(
-                Icons.add,
-                color: Colors.black,
-                size: 15,
-              ),
-            ),
-          ))
+                height: 15,
+                width: 15,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                child: const Center(
+                  child: Icon(
+                    Icons.add,
+                    color: Colors.black,
+                    size: 15,
+                  ),
+                ),
+              ))
         ],
       ),
     );

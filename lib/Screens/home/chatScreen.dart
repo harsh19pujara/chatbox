@@ -77,9 +77,20 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: Colors.black,
                 )),
             IconButton(
-                onPressed: () {},
+                onPressed: () async {
+                  await FirebaseFirestore.instance
+                      .collection("chatRooms")
+                      .doc(widget.chatRoom.chatRoomId.toString())
+                      .collection("messages")
+                      .get()
+                      .then((value) {
+                        for(var docs in value.docs){
+                          docs.reference.delete();
+                        }
+                  });
+                },
                 icon: const Icon(
-                  Icons.videocam_sharp,
+                  Icons.delete,
                   color: Colors.black,
                 ))
           ],
@@ -199,7 +210,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 msg: msgController.text,
                                 msgId: uuid.v1(),
                                 senderId: widget.currentUser.id,
-                                createdOn: DateTime.now(),
+                                createdOn: Timestamp.now(),
                                 seen: false);
                             if (msgDetails != null) {
                               FirebaseFirestore.instance
@@ -212,8 +223,12 @@ class _ChatScreenState extends State<ChatScreen> {
                               print("msg send          ++++++++++++++++++++++++++++++++++++::::;:::::::::::::::::");
 
                               widget.chatRoom.lastMsg = msgController.text.toString();
+                              widget.chatRoom.lastMsgTime = msgDetails!.createdOn;
                               print(widget.chatRoom.lastMsg);
-                              FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId.toString()).set(widget.chatRoom.toMap());
+                              FirebaseFirestore.instance
+                                  .collection("chatRooms")
+                                  .doc(widget.chatRoom.chatRoomId.toString())
+                                  .set(widget.chatRoom.toMap());
                               msgController.clear();
                             }
                           }

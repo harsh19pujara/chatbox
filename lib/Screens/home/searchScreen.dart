@@ -32,9 +32,11 @@ class _SearchScreenState extends State<SearchScreen> {
       openChat = existingChatRoom;
     } else {
       var chatroom = ChatModel(
-          chatRoomId: uuid.v1(),
-          participants: {widget.userData.id.toString(): true, searchedUser!.id.toString(): true},
-          lastMsg: "");
+          chatRoomId: widget.userData.id.toString()+searchedUser!.id.toString(),
+          participants: [widget.userData.id.toString(), searchedUser!.id.toString()],
+          lastMsg: "",
+        lastMsgTime: null
+      );
 
       print("create room");
       await FirebaseFirestore.instance.collection("chatRooms").doc(chatroom.chatRoomId.toString()).set(chatroom.toMap());

@@ -14,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final Authentication _auth = Authentication();
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
         padding: const EdgeInsets.only(right: 20,left: 20,top: 80,bottom: 20),
         child: Form(
           key: formKey,
-          child: SingleChildScrollView(
+          child: isLoading == false ? SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -109,8 +110,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 GestureDetector(onTap: (){
                   if(formKey.currentState!.validate()){
+                    setState(() {
+                      isLoading = true;
+                    });
+                    print("setting state" + isLoading.toString());
                     _auth.login(email: email.trim(), pass: pass.trim()).then((value){
                       print('************  name  ${value!.name}  id ${value.email}  ${value.id}');
+                      isLoading = false;
                       Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -137,7 +143,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 )
               ],
             ),
-          ),
+          ) :  Center(child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              CircularProgressIndicator(),
+              SizedBox(height: 30,),
+              Text("Fetching Data...", style: TextStyle(fontSize: 22),)
+            ],
+          )),
         ),
       ),
     );

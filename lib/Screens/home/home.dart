@@ -12,12 +12,30 @@ class HomeScreen extends StatefulWidget {
   final UserModel userData;
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState(user: this.userData);
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   int navBarIndex = 0;
-  List<Widget> screenBodyList = [const MessageScreen(), const CallsScreen(), const ContactsScreen(), const SettingScreen()];
+  late UserModel user;
+
+  late List<Widget> screenBodyList = [
+    MessageScreen(userData: user),
+    const CallsScreen(),
+    const ContactsScreen(),
+    const SettingScreen()
+  ];
+
+  _HomeScreenState({required this.user});
+
+  // @override
+  // void initState() {
+  //   user = widget.userData;
+  //   setState(() {
+  //
+  //   });
+  //   super.initState();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -51,33 +69,37 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   AppBar customAppBar(int index) {
-    List screenTile = ["Home", "Calls","Contacts","Settings"];
+    List screenTile = ["Home", "Calls", "Contacts", "Settings"];
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
       leadingWidth: 80,
-
       leading: Container(
         margin: const EdgeInsets.fromLTRB(15, 15, 0, 0),
         // height: 10,
         // width: 10,
-        decoration: index != 3 ? BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 0.5)) : null,
+        decoration:
+            index != 3 ? BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 0.5)) : null,
         child: Align(
-          alignment: index != 3 ? Alignment.center:Alignment.center,
+          alignment: index != 3 ? Alignment.center : Alignment.center,
           child: IconButton(
               onPressed: () {
-                if(index == 0){
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => SearchScreen(userData: widget.userData),));
+                if (index == 0) {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchScreen(userData: widget.userData),
+                      ));
                 }
               },
-              icon:  Icon(
+              icon: Icon(
                 index != 3 ? Icons.search : Icons.arrow_back,
                 color: Colors.white,
                 size: index != 3 ? 35 : 25,
               )),
         ),
       ),
-      title:  Text(
+      title: Text(
         screenTile[index],
         style: const TextStyle(
           fontSize: 28,
@@ -95,54 +117,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget appBarRightWidget(int index){
-    if(index == 0){
+  Widget appBarRightWidget(int index) {
+    if (index == 0) {
       return GestureDetector(
-        onTap: (){
-          Navigator.push(context, MaterialPageRoute(builder: (context) =>  ProfileScreen(userData: widget.userData),));
+        onTap: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProfileScreen(userData: widget.userData),
+              ));
         },
         child: const CircleAvatar(
           backgroundImage: AssetImage('assets/images/dp1.png'),
           radius: 30,
         ),
       );
-    }
-    else if(index == 1){
+    } else if (index == 1) {
       return Container(
           margin: const EdgeInsets.fromLTRB(15, 15, 0, 0),
           padding: EdgeInsets.all(10),
           height: 60,
           width: 60,
-          decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 0.5)),
+          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 0.5)),
           child: const Center(
-            child:  Icon(
+            child: Icon(
               Icons.add_call,
               color: Colors.white,
               size: 35,
             ),
-          )
-      );
-    }
-    else if (index == 2){
+          ));
+    } else if (index == 2) {
       return Container(
           margin: const EdgeInsets.fromLTRB(15, 15, 0, 0),
           padding: EdgeInsets.all(15),
           height: 60,
           width: 60,
-          decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 0.5)),
+          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 0.5)),
           child: const Center(
             child: Icon(
               Icons.person_add_alt_1_sharp,
               color: Colors.white,
               size: 35,
             ),
-          )
-      );
-    }else{
+          ));
+    } else {
       return Container();
     }
   }

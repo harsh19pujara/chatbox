@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class MessageModel{
   String? msgId;
   String? msg;
   String? senderId;
-  DateTime? createdOn;
+  Timestamp? createdOn;
   bool? seen;
 
   MessageModel({required this.msg, required this.msgId, required this.senderId, required this.createdOn, required this.seen});
