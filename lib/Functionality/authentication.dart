@@ -32,6 +32,7 @@ class Authentication {
     UserModel? userData;
 
     try {
+      print("in function");
       user = await _auth.createUserWithEmailAndPassword(email: email, password: pass);
     } on FirebaseAuthException catch (e) {
       print('error ${e.message.toString()}');
@@ -39,7 +40,7 @@ class Authentication {
 
     if (user != null) {
       String uid = user.user!.uid;
-      UserModel newUser = UserModel(id: uid, email: email, name: name);
+      UserModel newUser = UserModel(id: uid, email: email, name: name, isOnline: false, profile: "");
       await FirebaseFirestore.instance.collection("users").doc(uid).set(newUser.toMap()).then((value) {
         print('user created');
         userData = newUser;

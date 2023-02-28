@@ -12,7 +12,30 @@ class MessageScreen extends StatefulWidget {
   State<MessageScreen> createState() => _MessageScreenState();
 }
 
-class _MessageScreenState extends State<MessageScreen> {
+class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    WidgetsBinding.instance.addObserver(this);
+    super.initState();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final isBg = state == AppLifecycleState.paused;
+    final isScreen = state == AppLifecycleState.resumed;
+    final isClosed = state == AppLifecycleState.detached;
+
+    isScreen == true
+        ? setState(() {
+            FirebaseFirestore.instance.collection("users").doc(widget.userData.id).update({"isOnline": true});
+          })
+        : setState(() {
+            FirebaseFirestore.instance.collection("users").doc(widget.userData.id).update({"isOnline": false});
+          });
+
+    // super.didChangeAppLifecycleState(state);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -41,8 +64,8 @@ class _MessageScreenState extends State<MessageScreen> {
             child: StreamBuilder(
               stream: FirebaseFirestore.instance
                   .collection("chatRooms")
-                  .where("participants",arrayContains: widget.userData.id.toString())
-              .orderBy("lastMsgTime",descending: true)
+                  .where("participants", arrayContains: widget.userData.id.toString())
+                  .orderBy("lastMsgTime", descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 // print(snapshot.data!.docs.toList());
@@ -55,8 +78,10 @@ class _MessageScreenState extends State<MessageScreen> {
                         return recentChatWidget(snapshot.data!.docs[index].data());
                       },
                     );
+                  } else if (snapshot.hasError) {
+                    return const Center(child: Text("Error Fetching Data", style: TextStyle(fontSize: 18)));
                   } else {
-                    return const Text("Error Fetching Data", style: TextStyle(fontSize: 18));
+                    return const Center(child: Text("Start Chatting With Friends", style: TextStyle(fontSize: 18)));
                   }
                 } else {
                   return const Center(
@@ -100,14 +125,14 @@ class _MessageScreenState extends State<MessageScreen> {
         // print("other user = " + otherUser);
       }
     }
-    print(data.toString());
+    // print(data.toString());
     return otherUser != null
-        ? FutureBuilder(
-            future: FirebaseFirestore.instance.collection("users").doc(otherUser).get(),
+        ? StreamBuilder(
+            stream: FirebaseFirestore.instance.collection("users").doc(otherUser).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.data != null) {
                 UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
-                // print("user data" + searchedUser.toString());
+                print("user data" + searchedUser.toMap().toString());
                 return InkWell(
                   onTap: () {
                     Navigator.push(
@@ -141,7 +166,11 @@ class _MessageScreenState extends State<MessageScreen> {
                                 height: 10,
                                 width: 10,
                                 // alignment: AlignmentDirectional.bottomEnd,
-                                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF0FE16D)),
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: searchedUser.isOnline != null
+                                        ? (searchedUser.isOnline! ? const Color(0xFF0FE16D) : Colors.grey)
+                                        : Colors.red),
                               ),
                             )
                           ]),

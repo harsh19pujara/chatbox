@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:chatting_app/Functionality/authentication.dart';
 import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/home/home.dart';
 import 'package:chatting_app/Screens/welcomeScreen.dart';
-import 'package:chatting_app/main.dart';
 import 'package:chatting_app/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -18,38 +19,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
   static final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   late UserModel temp;
 
+  TextEditingController email = TextEditingController();
+  TextEditingController name = TextEditingController();
+  TextEditingController pass = TextEditingController();
+
+  String checkPass = '';
+  bool isLoading = false;
+
   @override
   Widget build(BuildContext context) {
+    name.text = "Harsh";
+    email.text = "harsh22@gmail.com";
+    pass.text = "Test@123";
+
     double height = MediaQuery.of(context).size.height;
-    double width = MediaQuery.of(context).size.width;
-    bool isLoading = false;
-
-    String checkPass = '';
-
-    String email = '';
-    String name = '';
-    String pass = '';
+    // double width = MediaQuery.of(context).size.width;
 
     return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-              onPressed: () {
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
-              },
-              icon: const Icon(
-                Icons.arrow_back,
-                color: Colors.black,
-              )),
-        ),
-        body: isLoading == false
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Form(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+            onPressed: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+            },
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.black,
+            )),
+      ),
+      body: isLoading == false
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Form(
                     key: formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -76,6 +81,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         TextFormField(
                           keyboardType: TextInputType.name,
+                          controller: name,
                           validator: (value) {
                             if (value!.isEmpty) {
                               return 'Please enter Your Name';
@@ -83,24 +89,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               return null;
                             }
                           },
-                          onChanged: (value) {
-                            name = value;
-                          },
                           decoration:
                               const InputDecoration(labelText: 'Your Name', labelStyle: TextStyle(color: Color(0xFF24786D))),
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
                           keyboardType: TextInputType.emailAddress,
+                          controller: email,
                           validator: (value) {
                             if (!value!.contains('@')) {
                               return 'Please enter proper email address';
                             } else {
                               return null;
                             }
-                          },
-                          onChanged: (value) {
-                            email = value;
                           },
                           decoration:
                               const InputDecoration(labelText: 'Your Email', labelStyle: TextStyle(color: Color(0xFF24786D))),
@@ -115,9 +116,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               return null;
                             }
                           },
-                          onChanged: (value) {
-                            pass = value;
-                          },
+                          controller: pass,
                           decoration:
                               const InputDecoration(labelText: 'Password', labelStyle: TextStyle(color: Color(0xFF24786D))),
                           obscureText: true,
@@ -140,25 +139,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         GestureDetector(
                             onTap: () async {
+                              print("Value $isLoading");
                               if (formKey.currentState!.validate()) {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                _auth.signUp(name: name, email: email.trim(), pass: pass.trim()).then((value) {
-                                  if (value != null) {
-                                    print("value not null" + isLoading.toString());
+                                Timer(Duration(seconds: 2), () {
+                                  _auth.signUp(name: name.text, email: email.text.trim(), pass: pass.text.trim()).then((value) {
+                                    if (value != null) {
+                                      print("After Value $isLoading");
 
-                                    isLoading = false;
+                                      isLoading = false;
 
-                                    Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => HomeScreen(
-                                                  userData: value,
-                                                )));
-                                  }
+                                      Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) => HomeScreen(
+                                                    userData: value,
+                                                  )));
+                                    }
+                                  });
                                 });
                               } else {
+                                // isLoading = false;
                                 const snackBar = SnackBar(
                                   content: Text('Please Recheck the details'),
                                   duration: Duration(seconds: 3),
@@ -167,27 +170,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               }
                             },
                             child:
-                                customButton(color: const Color(0xFF24786D), text: 'Create an Account', txtColor: Colors.white)),
+                                customButton(color: const Color(0xFF24786D), text: 'Create an Account', txtColor: Colors.white))
                       ],
-                    ),
-                  ),
+                    )),
+              ),
+            )
+          : Center(
+              child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                CircularProgressIndicator(),
+                SizedBox(
+                  height: 30,
                 ),
-              )
-            : CircularProgressIndicator()
-        // Center(
-        //         child: Column(
-        //         mainAxisAlignment: MainAxisAlignment.center,
-        //         children: const [
-        //           CircularProgressIndicator(),
-        //           SizedBox(
-        //             height: 30,
-        //           ),
-        //           Text(
-        //             "Creating Account...",
-        //             style: TextStyle(fontSize: 22),
-        //           )
-        //         ],
-        //       )),
-        );
+                Text(
+                  "Creating Account...",
+                  style: TextStyle(fontSize: 22),
+                )
+              ],
+            )),
+    );
   }
 }

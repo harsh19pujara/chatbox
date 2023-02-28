@@ -1,6 +1,7 @@
 import 'package:chatting_app/Model/chatModel.dart';
 import 'package:chatting_app/Model/messageModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
+import 'package:chatting_app/Screens/home/profileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -49,7 +50,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   )),
               CircleAvatar(
                 radius: 25,
-                child: IconButton(onPressed: () {}, icon: const Icon(Icons.person)),
+                child: IconButton(onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen(userData: widget.searchedUser),));
+                }, icon: const Icon(Icons.person)),
               ),
               const SizedBox(
                 width: 15,
@@ -87,6 +90,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         for(var docs in value.docs){
                           docs.reference.delete();
                         }
+                  }).then((value) {
+                    FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId.toString()).update({"lastMsg" : ""});
                   });
                 },
                 icon: const Icon(

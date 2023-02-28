@@ -5,6 +5,7 @@ import 'package:chatting_app/Screens/home/messageScreen.dart';
 import 'package:chatting_app/Screens/home/profileScreen.dart';
 import 'package:chatting_app/Screens/home/searchScreen.dart';
 import 'package:chatting_app/Screens/home/settingScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -28,15 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   _HomeScreenState({required this.user});
 
-  // @override
-  // void initState() {
-  //   user = widget.userData;
-  //   setState(() {
-  //
-  //   });
-  //   super.initState();
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: const Color(0xFF24786D),
         unselectedItemColor: const Color(0xFF797C7B),
         showUnselectedLabels: true,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
         iconSize: 28,
         items: const [
           BottomNavigationBarItem(
@@ -135,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (index == 1) {
       return Container(
           margin: const EdgeInsets.fromLTRB(15, 15, 0, 0),
-          padding: EdgeInsets.all(10),
+          padding: const EdgeInsets.all(10),
           height: 60,
           width: 60,
           decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 0.5)),
@@ -149,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (index == 2) {
       return Container(
           margin: const EdgeInsets.fromLTRB(15, 15, 0, 0),
-          padding: EdgeInsets.all(15),
+          padding: const EdgeInsets.all(15),
           height: 60,
           width: 60,
           decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 0.5)),

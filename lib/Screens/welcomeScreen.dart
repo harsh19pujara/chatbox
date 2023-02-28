@@ -16,9 +16,7 @@ class WelcomeScreen extends StatelessWidget {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          title: SizedBox(
-              height: height / 20,
-              child: Image.asset('assets/images/loginAppBarLogo.png')),
+          title: SizedBox(height: height / 20, child: Image.asset('assets/images/loginAppBarLogo.png')),
           centerTitle: true,
         ),
         body: Stack(
@@ -31,79 +29,57 @@ class WelcomeScreen extends StatelessWidget {
                   fit: BoxFit.fill,
                 )),
             Container(
-              padding: EdgeInsets.symmetric(
-                  vertical: width / 8, horizontal: height / 18),
+              padding: EdgeInsets.symmetric(vertical: width / 8, horizontal: height / 18),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
-                      height: height / 10,
+                      height: height / 17,
                     ),
                     Text(
                       'Connect',
-                      style: TextStyle(
-                          fontSize: height/14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white),
+                      style: TextStyle(fontSize: height / 14, fontWeight: FontWeight.w500, color: Colors.white),
                     ),
-                    Text('friends',
-                        style: TextStyle(
-                            fontSize: height/14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white)),
-                    Text('easily &',
-                        style: TextStyle(
-                            fontSize: height/14,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white)),
-                    Text('quickly',
-                        style: TextStyle(
-                            fontSize: height/14,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white)),
+                    Text('friends', style: TextStyle(fontSize: height / 14, fontWeight: FontWeight.w500, color: Colors.white)),
+                    Text('easily &', style: TextStyle(fontSize: height / 14, fontWeight: FontWeight.w900, color: Colors.white)),
+                    Text('quickly', style: TextStyle(fontSize: height / 14, fontWeight: FontWeight.w900, color: Colors.white)),
                     SizedBox(
-                      height: height/28,
+                      height: height / 28,
                     ),
                     Text(
                       'Our chat app is the perfect way to stay connected with friends and family.',
-                      style: TextStyle(
-                          fontSize: height/45,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.white),
+                      style: TextStyle(fontSize: height / 45, fontWeight: FontWeight.w300, color: Colors.white),
                     ),
-                    SizedBox(height: height/28),
+                    SizedBox(height: height / 28),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         circularLogo('assets/images/instagramLogo.png'),
-                        SizedBox(width: height/28),
+                        SizedBox(width: height / 28),
                         circularLogo('assets/images/googleLogo.png'),
-                        SizedBox(width: height/28),
+                        SizedBox(width: height / 28),
                         circularLogo('assets/images/appleLogo.png')
                       ],
                     ),
-                    SizedBox(height: height/20),
+                    SizedBox(height: height / 20),
                     Center(child: Image.asset('assets/images/orLogoLogin.png')),
-                    SizedBox(height: height/20),
+                    SizedBox(height: height / 20),
                     Center(
                         child: GestureDetector(
                             onTap: () {
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => const SignUpScreen()));
+                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SignUpScreen()));
                             },
-                            child: customButton(color: Colors.white,text: 'Sign up with Email', txtColor: Colors.black))),
+                            child: customButton(color: Colors.white, text: 'Sign up with Email', txtColor: Colors.black))),
                     SizedBox(
-                      height: height/38,
+                      height: height / 38,
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           'Existing Account ?  ',
-                          style: TextStyle(color: Colors.white,fontSize: height/46),
+                          style: TextStyle(color: Colors.white, fontSize: height / 46),
                         ),
                         GestureDetector(
                           onTap: () {
@@ -111,8 +87,7 @@ class WelcomeScreen extends StatelessWidget {
                           },
                           child: Text(
                             'Log In',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w500, color: Colors.white,fontSize: height/44),
+                            style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white, fontSize: height / 44),
                           ),
                         )
                       ],
