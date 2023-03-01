@@ -52,6 +52,8 @@ class Authentication {
   }
 
   Future<void> logOut() async {
-    await _auth.signOut();
+    await _auth.signOut().then((value) {
+      print("success logout");
+    });
   }
 }

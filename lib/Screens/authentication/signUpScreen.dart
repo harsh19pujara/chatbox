@@ -5,6 +5,8 @@ import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/home/home.dart';
 import 'package:chatting_app/Screens/welcomeScreen.dart';
 import 'package:chatting_app/widgets/widgets.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -18,6 +20,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final Authentication _auth = Authentication();
   static final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   late UserModel temp;
+  FirebaseAuth auth = FirebaseAuth.instance;
+  bool showPass = false;
+  bool showConfirmPass = false;
+
 
   TextEditingController email = TextEditingController();
   TextEditingController name = TextEditingController();
@@ -28,9 +34,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    name.text = "Harsh";
-    email.text = "harsh22@gmail.com";
-    pass.text = "Test@123";
+    // name.text = "Harsh";
+    // email.text = "harsh22@gmail.com";
+    // pass.text = "Test@123";
 
     double height = MediaQuery.of(context).size.height;
     // double width = MediaQuery.of(context).size.width;
@@ -82,6 +88,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         TextFormField(
                           keyboardType: TextInputType.name,
                           controller: name,
+                          textCapitalization: TextCapitalization.words,
                           validator: (value) {
                             if (value!.isEmpty) {
                               return 'Please enter Your Name';
@@ -118,8 +125,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                           controller: pass,
                           decoration:
-                              const InputDecoration(labelText: 'Password', labelStyle: TextStyle(color: Color(0xFF24786D))),
-                          obscureText: true,
+                              InputDecoration(suffixIcon: IconButton(onPressed: (){setState(() {
+                                showPass = !showPass;
+                              });}, icon: Icon(!showPass ? Icons.visibility_off : Icons.visibility)),labelText: 'Password', labelStyle: const TextStyle(color: Color(0xFF24786D))),
+                          obscureText: showPass,
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
@@ -130,9 +139,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               return null;
                             }
                           },
-                          decoration: const InputDecoration(
-                              labelText: 'Confirm Password', labelStyle: TextStyle(color: Color(0xFF24786D))),
-                          obscureText: true,
+                          decoration:  InputDecoration(suffixIcon: IconButton(onPressed: (){setState(() {
+                            showConfirmPass = !showConfirmPass;
+                          });}, icon: Icon(!showConfirmPass ? Icons.visibility_off : Icons.visibility)),
+                              labelText: 'Confirm Password', labelStyle: const TextStyle(color: Color(0xFF24786D))),
+                          obscureText: showConfirmPass,
                         ),
                         SizedBox(
                           height: height / 8,
@@ -144,21 +155,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                Timer(Duration(seconds: 2), () {
-                                  _auth.signUp(name: name.text, email: email.text.trim(), pass: pass.text.trim()).then((value) {
-                                    if (value != null) {
-                                      print("After Value $isLoading");
+                                _auth.signUp(name: name.text, email: email.text.trim(), pass: pass.text.trim()).then((value) {
+                                  if (value != null) {
+                                    print("After Value $isLoading");
 
-                                      isLoading = false;
+                                    isLoading = false;
 
-                                      Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) => HomeScreen(
-                                                    userData: value,
-                                                  )));
-                                    }
-                                  });
+                                    FirebaseFirestore.instance.collection("users").doc(auth.currentUser!.uid).update({"isOnline": true});
+
+                                    Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => HomeScreen(
+                                              userData: value,
+                                            )));
+                                  }
                                 });
                               } else {
                                 // isLoading = false;

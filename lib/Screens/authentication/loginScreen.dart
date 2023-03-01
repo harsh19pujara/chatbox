@@ -1,6 +1,8 @@
 import 'package:chatting_app/Functionality/authentication.dart';
 import 'package:chatting_app/Screens/home/home.dart';
 import 'package:chatting_app/Screens/welcomeScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chatting_app/widgets/widgets.dart';
 
@@ -13,15 +15,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final Authentication _auth = Authentication();
   bool isLoading = false;
+  FirebaseAuth auth = FirebaseAuth.instance;
+  bool showPass = false;
+  TextEditingController email = TextEditingController();
+  TextEditingController pass = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    GlobalKey<FormState> formKey = GlobalKey<FormState>();
-
-    String email = '';
-    String pass = '';
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -81,9 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     }
                   },
-                  onChanged: (value) {
-                    email = value;
-                  },
+                controller: email,
                   decoration: const InputDecoration(
                       labelText: 'Email',
                       labelStyle: TextStyle(color: Color(0xFF24786D))),
@@ -97,13 +98,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     }
                   },
-                  onChanged: (value) {
-                    pass = value;
-                  },
-                  decoration: const InputDecoration(
+                  controller: pass,
+                  // focusNode: FocusNode(),
+
+                  decoration:  InputDecoration(
+                    suffixIcon: IconButton(onPressed: (){setState(() {
+                      showPass = !showPass;
+                    });}, icon: Icon(showPass ? Icons.visibility : Icons.visibility_off)),
                       labelText: 'Password',
                       labelStyle: TextStyle(color: Color(0xFF24786D))),
-                  obscureText: true,
+                  obscureText: showPass,
                 ),
                 const SizedBox(
                   height: 100,
@@ -113,10 +117,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     setState(() {
                       isLoading = true;
                     });
-                    print("setting state" + isLoading.toString());
-                    _auth.login(email: email.trim(), pass: pass.trim()).then((value){
+                    _auth.login(email: email.text.toString().trim(), pass: pass.text.toString().trim()).then((value){
                       print('************  name  ${value!.name}  id ${value.email}  ${value.id}');
                       isLoading = false;
+                      FirebaseFirestore.instance.collection("users").doc(auth.currentUser!.uid).update({"isOnline": true});
                       Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

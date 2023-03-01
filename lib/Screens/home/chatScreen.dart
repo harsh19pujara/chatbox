@@ -50,9 +50,15 @@ class _ChatScreenState extends State<ChatScreen> {
                   )),
               CircleAvatar(
                 radius: 25,
-                child: IconButton(onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen(userData: widget.searchedUser),));
-                }, icon: const Icon(Icons.person)),
+                child: IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProfileScreen(userData: widget.currentUser, searchedUser: widget.searchedUser),
+                          ));
+                    },
+                    icon: const Icon(Icons.person)),
               ),
               const SizedBox(
                 width: 15,
@@ -87,11 +93,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       .collection("messages")
                       .get()
                       .then((value) {
-                        for(var docs in value.docs){
-                          docs.reference.delete();
-                        }
+                    for (var docs in value.docs) {
+                      docs.reference.delete();
+                    }
                   }).then((value) {
-                    FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId.toString()).update({"lastMsg" : ""});
+                    FirebaseFirestore.instance
+                        .collection("chatRooms")
+                        .doc(widget.chatRoom.chatRoomId.toString())
+                        .update({"lastMsg": ""});
                   });
                 },
                 icon: const Icon(
@@ -137,16 +146,33 @@ class _ChatScreenState extends State<ChatScreen> {
                                       maxWidth: 300,
                                       child: Container(
                                           margin: const EdgeInsets.symmetric(vertical: 3),
-                                          padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+                                          padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
                                           decoration: BoxDecoration(
                                               color: snapshot.data!.docs[index].data()["senderId"].toString() ==
                                                       widget.currentUser.id
-                                                  ? Colors.grey
-                                                  : Colors.lightBlueAccent,
-                                              borderRadius: const BorderRadius.all(Radius.circular(5))),
+                                                  ? const Color(0xFFb3f2c7)
+                                                  : const Color(0xFFa8e5f0),
+                                              borderRadius: snapshot.data!.docs[index].data()["senderId"].toString() ==
+                                                      widget.currentUser.id
+                                                  ? const BorderRadius.only(
+                                                      bottomRight: Radius.circular(15),
+                                                      topRight: Radius.zero,
+                                                      topLeft: Radius.circular(15),
+                                                      bottomLeft: Radius.circular(15))
+                                                  : const BorderRadius.only(
+                                                      bottomRight: Radius.circular(15),
+                                                      topRight: Radius.circular(15),
+                                                      topLeft: Radius.zero,
+                                                      bottomLeft: Radius.circular(15))),
                                           child: Text(
                                             snapshot.data!.docs[index].data()["msg"],
-                                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w400,
+                                                color: snapshot.data!.docs[index].data()["senderId"].toString() ==
+                                                        widget.currentUser.id
+                                                    ? Colors.black
+                                                    : Colors.black),
                                             softWrap: true,
                                             maxLines: null,
                                             textAlign:
@@ -188,13 +214,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           width: 22,
                         ))),
                     Flexible(
-                        child: SizedBox(
-                      height: 50,
+                        child: LimitedBox(
+                      maxHeight: 70,
                       child: TextField(
                         controller: msgController,
-                        // dragStartBehavior: DragStartBehavior.down,
+                        textCapitalization: TextCapitalization.words,
                         maxLines: null,
-                        keyboardType: TextInputType.name,
+                        keyboardType: TextInputType.multiline,
                         decoration: const InputDecoration(
                             focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -208,37 +234,47 @@ class _ChatScreenState extends State<ChatScreen> {
                                 borderSide: BorderSide(color: Colors.transparent))),
                       ),
                     )),
-                    IconButton(
-                        onPressed: () {
-                          if (msgController.text.isNotEmpty) {
-                            msgDetails = MessageModel(
-                                msg: msgController.text,
-                                msgId: uuid.v1(),
-                                senderId: widget.currentUser.id,
-                                createdOn: Timestamp.now(),
-                                seen: false);
-                            if (msgDetails != null) {
-                              FirebaseFirestore.instance
-                                  .collection("chatRooms")
-                                  .doc(widget.chatRoom.chatRoomId.toString())
-                                  .collection("messages")
-                                  .doc(msgDetails!.msgId.toString())
-                                  .set(msgDetails!.toMap());
+                    Padding(
+                      padding: const EdgeInsets.only(left: 5),
+                      child: CircleAvatar(
+                        backgroundColor: const Color(0xFF20A090),
+                        radius: 25,
+                        child: IconButton(
+                            onPressed: () {
+                              if (msgController.text.isNotEmpty) {
+                                msgDetails = MessageModel(
+                                    msg: msgController.text,
+                                    msgId: uuid.v1(),
+                                    senderId: widget.currentUser.id,
+                                    createdOn: Timestamp.now(),
+                                    seen: false);
+                                if (msgDetails != null) {
+                                  FirebaseFirestore.instance
+                                      .collection("chatRooms")
+                                      .doc(widget.chatRoom.chatRoomId.toString())
+                                      .collection("messages")
+                                      .doc(msgDetails!.msgId.toString())
+                                      .set(msgDetails!.toMap());
 
-                              print("msg send          ++++++++++++++++++++++++++++++++++++::::;:::::::::::::::::");
+                                  print("msg send          ++++++++++++++++++++++++++++++++++++::::;:::::::::::::::::");
 
-                              widget.chatRoom.lastMsg = msgController.text.toString();
-                              widget.chatRoom.lastMsgTime = msgDetails!.createdOn;
-                              print(widget.chatRoom.lastMsg);
-                              FirebaseFirestore.instance
-                                  .collection("chatRooms")
-                                  .doc(widget.chatRoom.chatRoomId.toString())
-                                  .set(widget.chatRoom.toMap());
-                              msgController.clear();
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.send_outlined))
+                                  widget.chatRoom.lastMsg = msgController.text.toString();
+                                  widget.chatRoom.lastMsgTime = msgDetails!.createdOn;
+                                  print(widget.chatRoom.lastMsg);
+                                  FirebaseFirestore.instance
+                                      .collection("chatRooms")
+                                      .doc(widget.chatRoom.chatRoomId.toString())
+                                      .set(widget.chatRoom.toMap());
+                                  msgController.clear();
+                                }
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.send_sharp,
+                              color: Colors.white,
+                            )),
+                      ),
+                    )
                   ],
                 ),
               )

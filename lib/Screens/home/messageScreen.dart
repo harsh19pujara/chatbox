@@ -2,6 +2,7 @@ import 'package:chatting_app/Model/chatModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/home/chatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class MessageScreen extends StatefulWidget {
@@ -13,6 +14,8 @@ class MessageScreen extends StatefulWidget {
 }
 
 class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserver {
+  FirebaseAuth auth = FirebaseAuth.instance;
+
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
@@ -21,19 +24,20 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final isBg = state == AppLifecycleState.paused;
-    final isScreen = state == AppLifecycleState.resumed;
-    final isClosed = state == AppLifecycleState.detached;
 
-    isScreen == true
-        ? setState(() {
-            FirebaseFirestore.instance.collection("users").doc(widget.userData.id).update({"isOnline": true});
-          })
-        : setState(() {
-            FirebaseFirestore.instance.collection("users").doc(widget.userData.id).update({"isOnline": false});
-          });
-
-    // super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      if (mounted) {
+        setState(() {
+          FirebaseFirestore.instance.collection("users").doc(widget.userData.id.toString()).update({"isOnline": true});
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          FirebaseFirestore.instance.collection("users").doc(widget.userData.id.toString()).update({"isOnline": false});
+        });
+      }
+    }
   }
 
   @override
@@ -71,11 +75,23 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                 // print(snapshot.data!.docs.toList());
                 if (snapshot.hasData) {
                   if (snapshot.data!.docs.isNotEmpty) {
+                    List notNullRooms = snapshot.data!.docs
+                        .map((e) {
+                          var tempModel = ChatModel.fromJson(e.data());
+                          if (tempModel.lastMsg != "" || tempModel.lastMsgTime != null) {
+                            return tempModel;
+                          }
+                        })
+                        .whereType<ChatModel>()
+                        .toList();
+
+                    print(notNullRooms);
+
                     return ListView.builder(
                       physics: const BouncingScrollPhysics(),
-                      itemCount: snapshot.data!.docs.length,
+                      itemCount: notNullRooms.length,
                       itemBuilder: (context, index) {
-                        return recentChatWidget(snapshot.data!.docs[index].data());
+                        return recentChatWidget(notNullRooms[index]);
                       },
                     );
                   } else if (snapshot.hasError) {
@@ -116,10 +132,9 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
     );
   }
 
-  Widget recentChatWidget(Map<String, dynamic> data) {
+  Widget recentChatWidget(ChatModel data) {
     String? otherUser;
-    ChatModel chatData = ChatModel.fromJson(data);
-    for (var element in chatData.participants!) {
+    for (var element in data.participants!) {
       if (element.toString() != widget.userData.id.toString()) {
         otherUser = element;
         // print("other user = " + otherUser);
@@ -132,14 +147,14 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
             builder: (context, snapshot) {
               if (snapshot.data != null) {
                 UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
-                print("user data" + searchedUser.toMap().toString());
+                // print("user data" + searchedUser.toMap().toString());
                 return InkWell(
                   onTap: () {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              ChatScreen(chatRoom: chatData, currentUser: widget.userData, searchedUser: searchedUser),
+                              ChatScreen(chatRoom: data, currentUser: widget.userData, searchedUser: searchedUser),
                         ));
                   },
                   child: Container(
@@ -188,7 +203,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                                 ),
                                 Text(
-                                  chatData.lastMsg.toString(),
+                                  data.lastMsg.toString().replaceAll('\n', ' '),
                                   style: const TextStyle(fontSize: 12),
                                   overflow: TextOverflow.ellipsis,
                                 )
