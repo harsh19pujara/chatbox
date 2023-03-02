@@ -148,6 +148,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
               if (snapshot.data != null) {
                 UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
                 // print("user data" + searchedUser.toMap().toString());
+                print("profile url " + searchedUser.profile.toString());
                 return InkWell(
                   onTap: () {
                     Navigator.push(
@@ -170,10 +171,12 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                       child: Row(
                         children: [
                           Stack(children: [
-                            const CircleAvatar(
-                              backgroundImage: AssetImage('assets/images/dp3.png'),
+                             CircleAvatar(
+                               backgroundColor: const Color(0xFFa8e5f0),
+                              backgroundImage: searchedUser.profile != "" && searchedUser.profile != null ? NetworkImage(searchedUser.profile.toString()) : null,
                               radius: 26,
-                            ),
+                               child: searchedUser.profile != "" && searchedUser.profile != null ? null : const Icon(Icons.person,color: Colors.white),
+                               ),
                             Positioned(
                               bottom: 3,
                               right: 3,

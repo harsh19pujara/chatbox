@@ -3,9 +3,10 @@ import 'package:chatting_app/Model/messageModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/home/profileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key, required this.chatRoom, required this.currentUser, required this.searchedUser}) : super(key: key);
@@ -26,6 +27,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
   }
+
+  final snackBar = const SnackBar(content: Text("Error launching URL"));
 
   @override
   Widget build(BuildContext context) {
@@ -50,15 +53,17 @@ class _ChatScreenState extends State<ChatScreen> {
                   )),
               CircleAvatar(
                 radius: 25,
+                backgroundColor: const Color(0xFFa8e5f0),
+                backgroundImage: widget.searchedUser.profile != "" && widget.searchedUser.profile != null ? NetworkImage(widget.searchedUser.profile.toString()) : null,
                 child: IconButton(
                     onPressed: () {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ProfileScreen(userData: widget.currentUser, searchedUser: widget.searchedUser),
+                            builder: (context) => ProfileScreen(searchedUser: widget.searchedUser),
                           ));
                     },
-                    icon: const Icon(Icons.person)),
+                    icon: widget.searchedUser.profile != "" && widget.searchedUser.profile != null ? Container() : const Icon(Icons.person,color: Colors.white,)),
               ),
               const SizedBox(
                 width: 15,
@@ -86,22 +91,39 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: Colors.black,
                 )),
             IconButton(
-                onPressed: () async {
-                  await FirebaseFirestore.instance
-                      .collection("chatRooms")
-                      .doc(widget.chatRoom.chatRoomId.toString())
-                      .collection("messages")
-                      .get()
-                      .then((value) {
-                    for (var docs in value.docs) {
-                      docs.reference.delete();
-                    }
-                  }).then((value) {
-                    FirebaseFirestore.instance
-                        .collection("chatRooms")
-                        .doc(widget.chatRoom.chatRoomId.toString())
-                        .update({"lastMsg": ""});
-                  });
+                onPressed: ()  {
+                  showDialog(context: context, builder: (context) {
+                   return AlertDialog(
+                     title: const Text("Do you want to Delete All Chats ? "),
+                     content: Row(
+                       mainAxisAlignment: MainAxisAlignment.end,
+                       children: [
+                         TextButton(onPressed: (){
+                           Navigator.pop(context);
+                         }, child: const Text("Cancel",style: TextStyle(color: Colors.black,fontSize: 18),)),
+                         const SizedBox(width: 10,),
+                         TextButton(onPressed: () async{
+                           await FirebaseFirestore.instance
+                               .collection("chatRooms")
+                               .doc(widget.chatRoom.chatRoomId.toString())
+                               .collection("messages")
+                               .get()
+                               .then((value) {
+                             for (var docs in value.docs) {
+                               docs.reference.delete();
+                             }
+                           }).then((value) async{
+                             Navigator.pop(context);
+                             await FirebaseFirestore.instance
+                                 .collection("chatRooms")
+                                 .doc(widget.chatRoom.chatRoomId.toString())
+                                 .update({"lastMsg": ""});
+                           });
+                         }, child: const Text("Delete",style: TextStyle(color: Colors.red,fontSize: 18)))
+                       ],
+                     ),
+                   );
+                 },);
                 },
                 icon: const Icon(
                   Icons.delete,
@@ -133,7 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           reverse: true,
                           itemCount: snapshot.data!.docs.length,
                           itemBuilder: (context, index) {
-                            return Container(
+                            return SizedBox(
                               // color: Colors.blueGrey,
                               width: MediaQuery.of(context).size.width - 100,
                               child: Row(
@@ -164,8 +186,16 @@ class _ChatScreenState extends State<ChatScreen> {
                                                       topRight: Radius.circular(15),
                                                       topLeft: Radius.zero,
                                                       bottomLeft: Radius.circular(15))),
-                                          child: Text(
-                                            snapshot.data!.docs[index].data()["msg"],
+                                          child: Linkify(
+                                            onOpen: (link) async{
+                                              if(await canLaunchUrl(Uri.parse(link.url))){
+                                                await launchUrl(Uri.parse(link.url),mode: LaunchMode.externalApplication,);
+                                              }else{
+                                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                                              }
+                                            },
+                                            text: snapshot.data!.docs[index].data()["msg"],
                                             style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.w400,
@@ -175,6 +205,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                                     : Colors.black),
                                             softWrap: true,
                                             maxLines: null,
+                                            linkifiers: const [EmailLinkifier(),UrlLinkifier()],
+                                            linkStyle: const TextStyle(color: Colors.blueAccent),
                                             textAlign:
                                                 snapshot.data!.docs[index].data()["senderId"].toString() == widget.currentUser.id
                                                     ? TextAlign.start
@@ -218,7 +250,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       maxHeight: 70,
                       child: TextField(
                         controller: msgController,
-                        textCapitalization: TextCapitalization.words,
+                        textCapitalization: TextCapitalization.sentences,
                         maxLines: null,
                         keyboardType: TextInputType.multiline,
                         decoration: const InputDecoration(

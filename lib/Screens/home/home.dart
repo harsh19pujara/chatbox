@@ -5,7 +5,6 @@ import 'package:chatting_app/Screens/home/messageScreen.dart';
 import 'package:chatting_app/Screens/home/profileScreen.dart';
 import 'package:chatting_app/Screens/home/searchScreen.dart';
 import 'package:chatting_app/Screens/home/settingScreen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     MessageScreen(userData: user),
     const CallsScreen(),
     const ContactsScreen(),
-    const SettingScreen()
+    SettingScreen(userData: user,)
   ];
 
   _HomeScreenState({required this.user});
@@ -85,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               icon: Icon(
-                index != 3 ? Icons.search : Icons.arrow_back,
+                index != 3 ? Icons.search :null,
                 color: Colors.white,
                 size: index != 3 ? 35 : 25,
               )),
@@ -111,18 +110,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget appBarRightWidget(int index) {
     if (index == 0) {
-      return GestureDetector(
-        onTap: () {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProfileScreen(userData: widget.userData),
-              ));
-        },
-        child: const CircleAvatar(
-          backgroundImage: AssetImage('assets/images/dp1.png'),
-          radius: 30,
-        ),
+      return CircleAvatar(
+        backgroundColor: Colors.greenAccent,
+        backgroundImage: widget.userData.profile != "" && widget.userData.profile != null ? NetworkImage(widget.userData.profile.toString()) : null,
+        radius: 30,
+        child: widget.userData.profile != "" && widget.userData.profile != null ? null : const Icon(Icons.person,color: Colors.white),
       );
     } else if (index == 1) {
       return Container(
