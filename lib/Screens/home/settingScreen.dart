@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:chatting_app/Model/userModel.dart';
@@ -19,6 +20,8 @@ class SettingScreen extends StatefulWidget {
 class _SettingScreenState extends State<SettingScreen> {
   Authentication auth = Authentication();
   File? profileImage;
+  UserModel? userDataLatest;
+
 
   getImage(ImageSource source) async {
     XFile? pickedImage = await ImagePicker().pickImage(source: source);
@@ -58,11 +61,9 @@ class _SettingScreenState extends State<SettingScreen> {
             .collection("users")
             .doc(widget.userData.id)
             .update(widget.userData.toMap())
-            .then((value) {
+            .then((value) async{
           print("done Uploading");
-          setState(() {
-
-          });
+          await gettingUserData();
         });
       } else {
         print("error getting url");
@@ -72,9 +73,22 @@ class _SettingScreenState extends State<SettingScreen> {
     }
   }
 
+  Future<void> gettingUserData() async{
+    DocumentSnapshot data =  await FirebaseFirestore.instance.collection("users").doc(widget.userData.id.toString()).get();
+    Map<String,dynamic> temp = data.data() as Map<String,dynamic>;
+    userDataLatest = UserModel.fromJson(temp);
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    gettingUserData();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
-    print(widget.userData.toMap().toString());
+    print("in build"+widget.userData.toMap().toString());
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -106,10 +120,10 @@ class _SettingScreenState extends State<SettingScreen> {
                                   const SizedBox(height: 15,),
                                   Container(
                                     height: 250,
-                                    color: Colors.greenAccent,
-                                    child: widget.userData.profile != null && widget.userData.profile != ""
-                                        ? FittedBox(fit: BoxFit.fill, child: Image.network(widget.userData.profile.toString()))
-                                        : const Center(child: Icon(Icons.person,color: Colors.white,size: 50,)),
+                                    color: Colors.black26,
+                                    child: userDataLatest != null ? (userDataLatest!.profile != null && userDataLatest!.profile != ""
+                                        ? FittedBox(fit: BoxFit.fill, child: Image.network(userDataLatest!.profile.toString()))
+                                        : const Center(child: Icon(Icons.person,color: Colors.white,size: 50,))) : Container(),
                                   ),
                                   const SizedBox(
                                     height: 15,
@@ -124,6 +138,7 @@ class _SettingScreenState extends State<SettingScreen> {
                                   ListTile(
                                     onTap: () {
                                       getImage(ImageSource.camera);
+
                                     },
                                     title: const Text("Take a Picture"),
                                     leading: const Icon(Icons.camera_alt),
@@ -131,11 +146,10 @@ class _SettingScreenState extends State<SettingScreen> {
                                   ListTile(
                                     onTap: () async{
                                       await FirebaseStorage.instance.ref("ProfilePics").child(widget.userData.id.toString()).delete().then((value) async{
-                                        await FirebaseFirestore.instance.collection("users").doc(widget.userData.id.toString()).update({"profile" : ""}).then((value) {
+                                        Navigator.pop(context);
+                                        await FirebaseFirestore.instance.collection("users").doc(widget.userData.id.toString()).update({"profile" : ""}).then((value) async{
                                           print("done delete");
-                                          setState(() {
-
-                                          });
+                                          await gettingUserData();
                                         });
                                       });
                                     },
@@ -150,11 +164,11 @@ class _SettingScreenState extends State<SettingScreen> {
                       },
                       child: CircleAvatar(
                           radius: 35,
-                          backgroundImage: widget.userData.profile != null && widget.userData.profile != ""
-                              ? NetworkImage(widget.userData.profile.toString())
-                              : null,
+                          backgroundImage: userDataLatest != null ? (userDataLatest!.profile != null && userDataLatest!.profile != ""
+                              ? NetworkImage(userDataLatest!.profile.toString())
+                              : null) : null,
                           backgroundColor: Colors.greenAccent,
-                          child: widget.userData.profile != null && widget.userData.profile != ""
+                          child: userDataLatest != null ?(userDataLatest!.profile != null && userDataLatest!.profile != ""
                               ? Container() :
                               const Center(
                                 child:  Icon(
@@ -162,7 +176,7 @@ class _SettingScreenState extends State<SettingScreen> {
                                     color: Colors.white,
                                     size: 30,
                                   ),
-                              )),
+                              )) : Container()),
                     ),
                     const SizedBox(
                       width: 15,
@@ -183,7 +197,7 @@ class _SettingScreenState extends State<SettingScreen> {
                         icon: const Icon(
                           Icons.qr_code_2,
                           size: 30,
-                        ))
+                        )),
                   ],
                 ),
                 const SizedBox(
@@ -226,7 +240,10 @@ class _SettingScreenState extends State<SettingScreen> {
                     child: const Text(
                       "Log Out",
                       style: TextStyle(fontSize: 18, color: Colors.black),
-                    ))
+                    )),
+                const SizedBox(height: 15,),
+                Text(widget.userData.id.toString(),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400)),
               ],
             ),
           ),

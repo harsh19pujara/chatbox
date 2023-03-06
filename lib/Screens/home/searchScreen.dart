@@ -35,7 +35,8 @@ class _SearchScreenState extends State<SearchScreen> {
           chatRoomId: widget.userData.id.toString()+searchedUser!.id.toString(),
           participants: [widget.userData.id.toString(), searchedUser!.id.toString()],
           lastMsg: "",
-        lastMsgTime: null
+        lastMsgTime: null,
+        online: {widget.userData.id.toString() : true, searchedUser!.id.toString() : false}
       );
 
       print("create room");

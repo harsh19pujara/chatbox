@@ -25,10 +25,37 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
+    updateUserOnlineStatus(true);
     super.initState();
   }
 
+  updateUserOnlineStatus(bool status) async {
+    await FirebaseFirestore.instance
+        .collection("chatRooms")
+        .doc(widget.chatRoom.chatRoomId)
+        .update({"online.${widget.currentUser.id.toString()}": status});
+  }
+
+  updateMessageOnlineStatus(String docId, bool status) async {
+    print(" in function try updating");
+    await FirebaseFirestore.instance
+        .collection("chatRooms")
+        .doc(widget.chatRoom.chatRoomId)
+        .collection("messages")
+        .doc(docId)
+        .update({"seen": status}).then((value) {
+      print("updated");
+    });
+  }
+
   final snackBar = const SnackBar(content: Text("Error launching URL"));
+
+  @override
+  void dispose() {
+    print("getting dispose ");
+    updateUserOnlineStatus(false);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +81,9 @@ class _ChatScreenState extends State<ChatScreen> {
               CircleAvatar(
                 radius: 25,
                 backgroundColor: const Color(0xFFa8e5f0),
-                backgroundImage: widget.searchedUser.profile != "" && widget.searchedUser.profile != null ? NetworkImage(widget.searchedUser.profile.toString()) : null,
+                backgroundImage: widget.searchedUser.profile != "" && widget.searchedUser.profile != null
+                    ? NetworkImage(widget.searchedUser.profile.toString())
+                    : null,
                 child: IconButton(
                     onPressed: () {
                       Navigator.push(
@@ -63,7 +92,12 @@ class _ChatScreenState extends State<ChatScreen> {
                             builder: (context) => ProfileScreen(searchedUser: widget.searchedUser),
                           ));
                     },
-                    icon: widget.searchedUser.profile != "" && widget.searchedUser.profile != null ? Container() : const Icon(Icons.person,color: Colors.white,)),
+                    icon: widget.searchedUser.profile != "" && widget.searchedUser.profile != null
+                        ? Container()
+                        : const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                          )),
               ),
               const SizedBox(
                 width: 15,
@@ -91,39 +125,51 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: Colors.black,
                 )),
             IconButton(
-                onPressed: ()  {
-                  showDialog(context: context, builder: (context) {
-                   return AlertDialog(
-                     title: const Text("Do you want to Delete All Chats ? "),
-                     content: Row(
-                       mainAxisAlignment: MainAxisAlignment.end,
-                       children: [
-                         TextButton(onPressed: (){
-                           Navigator.pop(context);
-                         }, child: const Text("Cancel",style: TextStyle(color: Colors.black,fontSize: 18),)),
-                         const SizedBox(width: 10,),
-                         TextButton(onPressed: () async{
-                           await FirebaseFirestore.instance
-                               .collection("chatRooms")
-                               .doc(widget.chatRoom.chatRoomId.toString())
-                               .collection("messages")
-                               .get()
-                               .then((value) {
-                             for (var docs in value.docs) {
-                               docs.reference.delete();
-                             }
-                           }).then((value) async{
-                             Navigator.pop(context);
-                             await FirebaseFirestore.instance
-                                 .collection("chatRooms")
-                                 .doc(widget.chatRoom.chatRoomId.toString())
-                                 .update({"lastMsg": ""});
-                           });
-                         }, child: const Text("Delete",style: TextStyle(color: Colors.red,fontSize: 18)))
-                       ],
-                     ),
-                   );
-                 },);
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text("Do you want to Delete All Chats ? "),
+                        content: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text(
+                                  "Cancel",
+                                  style: TextStyle(color: Colors.black, fontSize: 18),
+                                )),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            TextButton(
+                                onPressed: () async {
+                                  await FirebaseFirestore.instance
+                                      .collection("chatRooms")
+                                      .doc(widget.chatRoom.chatRoomId.toString())
+                                      .collection("messages")
+                                      .get()
+                                      .then((value) {
+                                    for (var docs in value.docs) {
+                                      docs.reference.delete();
+                                    }
+                                  }).then((value) async {
+                                    Navigator.pop(context);
+                                    await FirebaseFirestore.instance
+                                        .collection("chatRooms")
+                                        .doc(widget.chatRoom.chatRoomId.toString())
+                                        .update({"lastMsg": ""});
+                                  });
+                                },
+                                child: const Text("Delete", style: TextStyle(color: Colors.red, fontSize: 18)))
+                          ],
+                        ),
+                      );
+                    },
+                  );
                 },
                 icon: const Icon(
                   Icons.delete,
@@ -138,91 +184,121 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               Expanded(
                 child: StreamBuilder(
-                  stream: FirebaseFirestore.instance
-                      .collection("chatRooms")
-                      .doc(widget.chatRoom.chatRoomId.toString())
-                      .collection("messages")
-                      .orderBy("createdOn", descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Container(
-                        // height: MediaQuery.of(context).size.height - 180,
-                        // width: MediaQuery.of(context).size.width - 10,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        child: ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          reverse: true,
-                          itemCount: snapshot.data!.docs.length,
-                          itemBuilder: (context, index) {
-                            return SizedBox(
-                              // color: Colors.blueGrey,
-                              width: MediaQuery.of(context).size.width - 100,
-                              child: Row(
-                                  mainAxisAlignment:
-                                      snapshot.data!.docs[index].data()["senderId"].toString() == widget.currentUser.id
+                  stream:
+                      FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId.toString()).snapshots(),
+                  builder: (context, chatRoomSnapshot) {
+                    return StreamBuilder(
+                      stream: FirebaseFirestore.instance
+                          .collection("chatRooms")
+                          .doc(widget.chatRoom.chatRoomId.toString())
+                          .collection("messages")
+                          .orderBy("createdOn", descending: true)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          List<MessageModel> messageList = snapshot.data!.docs.map((e) {
+                            return MessageModel.fromJson(e.data());
+                          }).toList();
+
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            child: ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              reverse: true,
+                              itemCount: messageList.length,
+                              itemBuilder: (context, index) {
+                                if (chatRoomSnapshot.hasData) {
+                                  if (messageList[index].senderId.toString() != widget.currentUser.id.toString()) {
+                                    print("condition ${messageList[index].msg} ${widget.currentUser.id.toString()} ");
+                                    bool isOnline = chatRoomSnapshot.data!["online"][widget.currentUser.id];
+                                    print(isOnline.toString());
+                                    if (isOnline == true && messageList[index].seen == false) {
+                                      print("try updating");
+                                      updateMessageOnlineStatus(messageList[index].msgId.toString(), true);
+                                      // setState(() {
+                                      //
+                                      // });
+                                    }
+                                  }
+                                }
+
+                                return SizedBox(
+                                  // color: Colors.blueGrey,
+                                  width: MediaQuery.of(context).size.width - 100,
+                                  child: Row(
+                                      mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
                                           ? MainAxisAlignment.end
                                           : MainAxisAlignment.start,
-                                  children: [
-                                    LimitedBox(
-                                      maxWidth: 300,
-                                      child: Container(
-                                          margin: const EdgeInsets.symmetric(vertical: 3),
-                                          padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
-                                          decoration: BoxDecoration(
-                                              color: snapshot.data!.docs[index].data()["senderId"].toString() ==
-                                                      widget.currentUser.id
-                                                  ? const Color(0xFFb3f2c7)
-                                                  : const Color(0xFFa8e5f0),
-                                              borderRadius: snapshot.data!.docs[index].data()["senderId"].toString() ==
-                                                      widget.currentUser.id
-                                                  ? const BorderRadius.only(
-                                                      bottomRight: Radius.circular(15),
-                                                      topRight: Radius.zero,
-                                                      topLeft: Radius.circular(15),
-                                                      bottomLeft: Radius.circular(15))
-                                                  : const BorderRadius.only(
-                                                      bottomRight: Radius.circular(15),
-                                                      topRight: Radius.circular(15),
-                                                      topLeft: Radius.zero,
-                                                      bottomLeft: Radius.circular(15))),
-                                          child: Linkify(
-                                            onOpen: (link) async{
-                                              if(await canLaunchUrl(Uri.parse(link.url))){
-                                                await launchUrl(Uri.parse(link.url),mode: LaunchMode.externalApplication,);
-                                              }else{
-                                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
-                                              }
-                                            },
-                                            text: snapshot.data!.docs[index].data()["msg"],
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w400,
-                                                color: snapshot.data!.docs[index].data()["senderId"].toString() ==
-                                                        widget.currentUser.id
-                                                    ? Colors.black
-                                                    : Colors.black),
-                                            softWrap: true,
-                                            maxLines: null,
-                                            linkifiers: const [EmailLinkifier(),UrlLinkifier()],
-                                            linkStyle: const TextStyle(color: Colors.blueAccent),
-                                            textAlign:
-                                                snapshot.data!.docs[index].data()["senderId"].toString() == widget.currentUser.id
-                                                    ? TextAlign.start
-                                                    : TextAlign.start,
-                                          )),
-                                    )
-                                  ]),
-                            );
-                          },
-                        ),
-                      );
-                    } else if (snapshot.hasError) {
-                      return const Text("Please Check Your Internet Connection");
-                    } else {
-                      return const Text("Say Hii to Your Friend");
-                    }
+                                      children: [
+                                        Row(
+                                          children: [
+                                            messageList[index].senderId.toString() == widget.currentUser.id.toString() ? Icon(Icons.check,
+                                                color: messageList[index].seen == true ? Colors.blue : Colors.grey, size: 17) : Container(),
+                                            const SizedBox(width: 2),
+                                            LimitedBox(
+                                              maxWidth: 300,
+                                              child: Container(
+                                                  margin: const EdgeInsets.symmetric(vertical: 3),
+                                                  padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+                                                  decoration: BoxDecoration(
+                                                      color: messageList[index].senderId == widget.currentUser.id
+                                                          ? const Color(0xFFb3f2c7)
+                                                          : const Color(0xFFa8e5f0),
+                                                      borderRadius: messageList[index].senderId == widget.currentUser.id
+                                                          ? const BorderRadius.only(
+                                                              bottomRight: Radius.circular(15),
+                                                              topRight: Radius.zero,
+                                                              topLeft: Radius.circular(15),
+                                                              bottomLeft: Radius.circular(15))
+                                                          : const BorderRadius.only(
+                                                              bottomRight: Radius.circular(15),
+                                                              topRight: Radius.circular(15),
+                                                              topLeft: Radius.zero,
+                                                              bottomLeft: Radius.circular(15))),
+                                                  child: Linkify(
+                                                    onOpen: (link) async {
+                                                      if (await canLaunchUrl(Uri.parse(link.url))) {
+                                                        await launchUrl(
+                                                          Uri.parse(link.url),
+                                                          mode: LaunchMode.externalApplication,
+                                                        );
+                                                      } else {
+                                                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                                                      }
+                                                    },
+                                                    text: messageList[index].msg.toString(),
+                                                    style: TextStyle(
+                                                        fontSize: 18,
+                                                        fontWeight: FontWeight.w400,
+                                                        color: messageList[index].senderId == widget.currentUser.id
+                                                            ? Colors.black
+                                                            : Colors.black),
+                                                    softWrap: true,
+                                                    maxLines: null,
+                                                    linkifiers: const [EmailLinkifier(), UrlLinkifier()],
+                                                    linkStyle: const TextStyle(color: Colors.blueAccent),
+                                                    textAlign: TextAlign.start,
+                                                  )),
+                                            ),
+                                            const SizedBox(width: 2),
+                                            messageList[index].senderId.toString() != widget.currentUser.id.toString()
+                                                ? Icon(Icons.check,
+                                                    color: messageList[index].seen == true ? Colors.blue : Colors.grey, size: 17)
+                                                : Container()
+                                          ],
+                                        )
+                                      ]),
+                                );
+                              },
+                            ),
+                          );
+                        } else if (snapshot.hasError) {
+                          return const Text("Please Check Your Internet Connection");
+                        } else {
+                          return const Text("Say Hii to Your Friend");
+                        }
+                      },
+                    );
                   },
                 ),
               ),
@@ -288,15 +364,12 @@ class _ChatScreenState extends State<ChatScreen> {
                                       .doc(msgDetails!.msgId.toString())
                                       .set(msgDetails!.toMap());
 
-                                  print("msg send          ++++++++++++++++++++++++++++++++++++::::;:::::::::::::::::");
-
-                                  widget.chatRoom.lastMsg = msgController.text.toString();
-                                  widget.chatRoom.lastMsgTime = msgDetails!.createdOn;
-                                  print(widget.chatRoom.lastMsg);
+                                  // print("msg send  ++++++++++++++++++++++++++++++++++++:::::::::::::::::::::");
+                                  // print(widget.chatRoom.lastMsg);
                                   FirebaseFirestore.instance
                                       .collection("chatRooms")
                                       .doc(widget.chatRoom.chatRoomId.toString())
-                                      .set(widget.chatRoom.toMap());
+                                      .update({"lastMsg": msgController.text.toString(), "lastMsgTime": msgDetails!.createdOn});
                                   msgController.clear();
                                 }
                               }
@@ -313,5 +386,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
         ));
+  }
+
+  Widget textTile() {
+    return Container();
   }
 }
