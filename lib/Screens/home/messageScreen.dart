@@ -134,11 +134,6 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
 
   Widget recentChatWidget(ChatModel data) {
     String? otherUser;
-    // data.participants!.forEach((key, value) {
-    //   if(key != widget.userData.id.toString()){
-    //     otherUser = key;
-    //   }
-    // });
     for (var element in data.participants!) {
       if (element.toString() != widget.userData.id.toString()) {
         otherUser = element;
