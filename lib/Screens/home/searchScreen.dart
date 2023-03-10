@@ -1,6 +1,7 @@
 import 'package:chatting_app/Model/chatModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/home/chatScreen.dart';
+import 'package:chatting_app/Screens/home/createGroupScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -19,6 +20,7 @@ class _SearchScreenState extends State<SearchScreen> {
   UserModel? searchedUser;
   ChatModel? openChat;
 
+  //***********************  CREATE CHATROOM  ***************************
   Future<ChatModel?> openChatRoom() async {
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection("chatRooms")
@@ -32,12 +34,11 @@ class _SearchScreenState extends State<SearchScreen> {
       openChat = existingChatRoom;
     } else {
       var chatroom = ChatModel(
-          chatRoomId: widget.userData.id.toString()+searchedUser!.id.toString(),
+          chatRoomId: widget.userData.id.toString() + searchedUser!.id.toString(),
           participants: [widget.userData.id.toString(), searchedUser!.id.toString()],
           lastMsg: "",
-        lastMsgTime: null,
-        online: {widget.userData.id.toString() : true, searchedUser!.id.toString() : false}
-      );
+          lastMsgTime: null,
+          online: {widget.userData.id.toString(): true, searchedUser!.id.toString(): false});
 
       print("create room");
       await FirebaseFirestore.instance.collection("chatRooms").doc(chatroom.chatRoomId.toString()).set(chatroom.toMap());
@@ -56,9 +57,12 @@ class _SearchScreenState extends State<SearchScreen> {
         title: const Text('Search Screen'),
       ),
       body: Container(
-        padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+        padding: const EdgeInsets.only(bottom: 5,top: 20,right: 20,left: 20),
         child: Column(
           children: [
+            Align(alignment: Alignment.centerRight,child: TextButton(onPressed: (){
+              Navigator.push(context, MaterialPageRoute(builder: (context) => CreateGroupScreen(userData: widget.userData),));
+            },child: Text("Create Group")),),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
               child: TextField(
@@ -74,7 +78,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(
-              height: 30,
+              height: 10,
             ),
             ElevatedButton(
                 onPressed: () {
@@ -87,7 +91,8 @@ class _SearchScreenState extends State<SearchScreen> {
             StreamBuilder(
               stream: FirebaseFirestore.instance
                   .collection("users")
-                  .where("email", isEqualTo: searchController.text)
+                  .where("email", isGreaterThanOrEqualTo: searchController.text)
+                  .where("email", isLessThanOrEqualTo:  "${searchController.text}~")
                   .where("email", isNotEqualTo: widget.userData.email.toString())
                   .snapshots(),
               builder: (context, snapshot) {
@@ -96,34 +101,47 @@ class _SearchScreenState extends State<SearchScreen> {
                   if (snapshot.data != null) {
                     QuerySnapshot data = snapshot.data!;
                     if (data.docs.isNotEmpty) {
-                      var temp = data.docs[0].data() as Map<String, dynamic>;
-                      searchedUser = UserModel.fromJson(temp);
-                      if (searchedUser != null) {
-                        return ListTile(
-                          onTap: () async {
-                            await openChatRoom().then((chatModelValue) {
-                              if (chatModelValue != null) {
-                                Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          ChatScreen(chatRoom: chatModelValue, currentUser: widget.userData, searchedUser: searchedUser!),
-                                    ));
-                              }
-                            });
+                      List<UserModel> searchedUserList = data.docs.map((e) {
+                        return UserModel.fromJson(e.data() as Map<String, dynamic>);
+                      }).toList();
+
+                      return Expanded(
+                        child: ListView.builder(
+
+                          itemCount: searchedUserList.length,
+                          itemBuilder: (context, index) {
+                            searchedUser = searchedUserList[index];
+                            return Container(
+                              margin: EdgeInsets.symmetric(vertical: 3),
+                              color: Colors.black,
+                              child: ListTile(
+                                onTap: () async {
+                                  await openChatRoom().then((chatModelValue) {
+                                    if (chatModelValue != null) {
+                                      Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ChatScreen(
+                                                chatRoom: chatModelValue,
+                                                currentUser: widget.userData,
+                                                searchedUser: searchedUser!),
+                                          ));
+                                    }
+                                  });
+                                },
+                                // tileColor: Colors.black,
+                                leading: const CircleAvatar(radius: 25, child: Icon(Icons.person)),
+                                title: Text(
+                                  searchedUser!.name.toString(),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                subtitle: Text(searchedUser!.email.toString(), style: const TextStyle(color: Colors.white)),
+                                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white),
+                              ),
+                            );
                           },
-                          tileColor: Colors.black,
-                          leading: const CircleAvatar(radius: 25, child: Icon(Icons.person)),
-                          title: Text(
-                            searchedUser!.name.toString(),
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          subtitle: Text(searchedUser!.email.toString(), style: const TextStyle(color: Colors.white)),
-                          trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white),
-                        );
-                      } else {
-                        return const Text("Error Parsing Data");
-                      }
+                        ),
+                      );
                     } else {
                       return const Text("Enter valid Email");
                     }

@@ -16,7 +16,7 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key, required this.chatRoom, required this.currentUser, required this.searchedUser}) : super(key: key);
   final ChatModel chatRoom;
   final UserModel currentUser;
-  final UserModel searchedUser;
+  final UserModel? searchedUser;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -115,18 +115,18 @@ class _ChatScreenState extends State<ChatScreen> {
               CircleAvatar(
                 radius: 25,
                 backgroundColor: const Color(0xFFa8e5f0),
-                backgroundImage: widget.searchedUser.profile != "" && widget.searchedUser.profile != null
-                    ? NetworkImage(widget.searchedUser.profile.toString())
+                backgroundImage: widget.searchedUser!.profile != "" && widget.searchedUser!.profile != null
+                    ? NetworkImage(widget.searchedUser!.profile.toString())
                     : null,
                 child: IconButton(
                     onPressed: () {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ProfileScreen(searchedUser: widget.searchedUser),
+                            builder: (context) => ProfileScreen(searchedUser: widget.searchedUser!),
                           ));
                     },
-                    icon: widget.searchedUser.profile != "" && widget.searchedUser.profile != null
+                    icon: widget.searchedUser!.profile != "" && widget.searchedUser!.profile != null
                         ? Container()
                         : const Icon(
                             Icons.person,
@@ -140,11 +140,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.searchedUser.name.toString(),
+                    widget.searchedUser!.name.toString(),
                     style: const TextStyle(color: Colors.black, fontSize: 22),
                   ),
                   Text(
-                    widget.searchedUser.email.toString(),
+                    widget.searchedUser!.email.toString(),
                     style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w400),
                   )
                 ],
@@ -191,11 +191,14 @@ class _ChatScreenState extends State<ChatScreen> {
                                       docs.reference.delete();
                                     }
                                   }).then((value) async {
-                                    await FirebaseStorage.instance.ref(widget.chatRoom.chatRoomId.toString()).listAll().then((value) {
+                                    await FirebaseStorage.instance
+                                        .ref(widget.chatRoom.chatRoomId.toString())
+                                        .listAll()
+                                        .then((value) {
                                       for (var element in value.items) {
                                         element.delete();
                                       }
-                                    }).then((value) async{
+                                    }).then((value) async {
                                       Navigator.pop(context);
                                       await FirebaseFirestore.instance
                                           .collection("chatRooms")
@@ -490,7 +493,10 @@ class ShowImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(top: true,bottom: true,child: Container(height: double.maxFinite, width: double.maxFinite, color: Colors.black, child: Image.network(imgUrl))),
+      body: SafeArea(
+          top: true,
+          bottom: true,
+          child: Container(height: double.maxFinite, width: double.maxFinite, color: Colors.black, child: Image.network(imgUrl))),
     );
   }
 }
