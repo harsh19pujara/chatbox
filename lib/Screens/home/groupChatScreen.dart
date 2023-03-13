@@ -213,7 +213,7 @@ class _GroupChatState extends State<GroupChat> {
                                     : MainAxisAlignment.start,
                                 children: [
                                   LimitedBox(
-                                    maxWidth: 280,
+                                    maxWidth: 320,
                                     child: Container(
                                       margin: const EdgeInsets.symmetric(vertical: 3),
                                       padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
@@ -232,25 +232,34 @@ class _GroupChatState extends State<GroupChat> {
                                           color: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
                                               ? const Color(0xFFb3f2c7)
                                               : const Color(0xFFa8e5f0)),
-                                      child: SizedBox(
-                                        child: Text(allMsg[index].msg.toString(),
-                                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        mainAxisSize: MainAxisSize.min ,
+                                        children: [
+                                          LimitedBox(
+                                            maxWidth: 240,
+                                            child: Text(allMsg[index].msg.toString(),
+                                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
+                                          ),
+                                          const SizedBox(width: 5,),
+                                          Text(
+                                            "${allMsg[index].createdOn!.toDate().hour}:${allMsg[index].createdOn!.toDate().minute}",
+                                            style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                          ),
+                                          Icon(Icons.check, color: allMsg[index].seen == true ? Colors.blue : Colors.grey, size: 17)
+                                        ],
                                       ),
                                     ),
                                   ),
                                 ]),
-                            Row(
-                              mainAxisAlignment: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
-                                  ? MainAxisAlignment.end
-                                  : MainAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "${allMsg[index].createdOn!.toDate().hour}:${allMsg[index].createdOn!.toDate().minute}",
-                                  style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                                ),
-                                Icon(Icons.check, color: allMsg[index].seen == true ? Colors.blue : Colors.grey, size: 17)
-                              ],
-                            )
+                            // Row(
+                            //   mainAxisAlignment: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
+                            //       ? MainAxisAlignment.end
+                            //       : MainAxisAlignment.start,
+                            //   children: [
+                            //
+                            //   ],
+                            // )
                           ]);
                         },
                       ),
