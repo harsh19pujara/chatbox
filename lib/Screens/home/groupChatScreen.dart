@@ -20,9 +20,29 @@ class _GroupChatState extends State<GroupChat> {
   TextEditingController msgController = TextEditingController();
   final uuid = const Uuid();
   MessageModel? msgDetails;
+  List<UserModel> participantData = [];
+  Map<String, String> participantsName = {};
+
+  @override
+  void initState() {
+    fetchFriendsDetails().then((value) {
+      setState(() {});
+    });
+    super.initState();
+  }
+
+  Future<void> fetchFriendsDetails() async {
+    for (var e in widget.chatGroup.participants!) {
+      var user = await FirebaseFirestore.instance.collection("users").doc(e.toString()).get();
+      var model = UserModel.fromJson(user.data() as Map<String, dynamic>);
+      participantData.add(model);
+      participantsName[model.id.toString()] = model.name.toString();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    print("user data" + participantData.toString());
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -48,31 +68,32 @@ class _GroupChatState extends State<GroupChat> {
                   ? NetworkImage(widget.chatGroup.groupProfile.toString())
                   : null,
               child: IconButton(
-                  onPressed: () {
-
-                  },
+                  onPressed: () {},
                   icon: widget.chatGroup.groupProfile != "" && widget.chatGroup.groupProfile != null
                       ? Container()
                       : const Icon(
-                    Icons.group,
-                    color: Colors.white,
-                  )),
+                          Icons.group,
+                          color: Colors.white,
+                        )),
             ),
             const SizedBox(
               width: 15,
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.chatGroup.groupName.toString(),
-                  style: const TextStyle(color: Colors.black, fontSize: 22),
-                ),
-                Text(
-                  widget.chatGroup.participants.toString(),
-                  style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w400),
-                )
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.chatGroup.groupName.toString(),
+                    style: const TextStyle(color: Colors.black, fontSize: 22),
+                  ),
+                  Text(
+                    participantsName.values.toString(),
+                    style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w400),
+                    overflow: TextOverflow.fade,
+                  )
+                ],
+              ),
             )
           ],
         ),
@@ -148,14 +169,105 @@ class _GroupChatState extends State<GroupChat> {
       body: Center(
         child: Column(
           children: [
-            Expanded(child: StreamBuilder(builder: (context, snapshot) {
-return Container();
-            },)),
+            Expanded(
+                child: StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection("chatGroups")
+                  .doc(widget.chatGroup.chatRoomId.toString())
+                  .collection("messages")
+                  .orderBy("createdOn", descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  if (snapshot.data!.docs.isNotEmpty) {
+                    List<MessageModel> allMsg = snapshot.data!.docs.map((e) {
+                      return MessageModel.fromJson(e.data());
+                    }).toList();
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      child: ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        reverse: true,
+                        itemCount: allMsg.length,
+                        itemBuilder: (context, index) {
+                          return Column(children: [
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            participantsName[allMsg[index].senderId.toString()] !=
+                                    participantsName[widget.currentUser.id.toString()]
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        participantsName[allMsg[index].senderId.toString()].toString(),
+                                        style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  )
+                                : Container(),
+                            Row(
+                                mainAxisAlignment: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
+                                    ? MainAxisAlignment.end
+                                    : MainAxisAlignment.start,
+                                children: [
+                                  LimitedBox(
+                                    maxWidth: 280,
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(vertical: 3),
+                                      padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+                                      decoration: BoxDecoration(
+                                          borderRadius: allMsg[index].senderId == widget.currentUser.id
+                                              ? const BorderRadius.only(
+                                                  bottomRight: Radius.circular(15),
+                                                  topRight: Radius.zero,
+                                                  topLeft: Radius.circular(15),
+                                                  bottomLeft: Radius.circular(15))
+                                              : const BorderRadius.only(
+                                                  bottomRight: Radius.circular(15),
+                                                  topRight: Radius.circular(15),
+                                                  topLeft: Radius.zero,
+                                                  bottomLeft: Radius.circular(15)),
+                                          color: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
+                                              ? const Color(0xFFb3f2c7)
+                                              : const Color(0xFFa8e5f0)),
+                                      child: SizedBox(
+                                        child: Text(allMsg[index].msg.toString(),
+                                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
+                                      ),
+                                    ),
+                                  ),
+                                ]),
+                            Row(
+                              mainAxisAlignment: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
+                                  ? MainAxisAlignment.end
+                                  : MainAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${allMsg[index].createdOn!.toDate().hour}:${allMsg[index].createdOn!.toDate().minute}",
+                                  style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                ),
+                                Icon(Icons.check, color: allMsg[index].seen == true ? Colors.blue : Colors.grey, size: 17)
+                              ],
+                            )
+                          ]);
+                        },
+                      ),
+                    );
+                  } else {
+                    return const Text("Start Chatting with Friends");
+                  }
+                } else if (snapshot.hasError) {
+                  return const Text("An Error Occurred");
+                } else {
+                  return const Text("Start Chatting with Friends");
+                }
+              },
+            )),
+            // *********************  BOTTOM TYPING BAR  *************************************
             Container(
-              // height: 60,
               margin: const EdgeInsets.all(5),
-              // color: Colors.red,
-              // padding: EdgeInsets.symmetric(vertical: 5,horizontal: 10),
               child: Row(
                 children: [
                   ElevatedButton(
@@ -169,30 +281,30 @@ return Container();
                           minimumSize: const Size(40, 50)),
                       child: SizedBox(
                           child: Image.asset(
-                            "assets/images/Clip.png",
-                            width: 22,
-                          ))),
+                        "assets/images/Clip.png",
+                        width: 22,
+                      ))),
                   Flexible(
                       child: LimitedBox(
-                        maxHeight: 70,
-                        child: TextField(
-                          controller: msgController,
-                          textCapitalization: TextCapitalization.sentences,
-                          maxLines: null,
-                          keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                                  borderSide: BorderSide(color: Colors.transparent)),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                              filled: true,
-                              fillColor: Colors.black12,
-                              hintText: "Enter Text...",
-                              enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                                  borderSide: BorderSide(color: Colors.transparent))),
-                        ),
-                      )),
+                    maxHeight: 70,
+                    child: TextField(
+                      controller: msgController,
+                      textCapitalization: TextCapitalization.sentences,
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
+                      decoration: const InputDecoration(
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(color: Colors.transparent)),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          filled: true,
+                          fillColor: Colors.black12,
+                          hintText: "Enter Text...",
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(color: Colors.transparent))),
+                    ),
+                  )),
                   Padding(
                     padding: const EdgeInsets.only(left: 5),
                     child: CircleAvatar(
@@ -216,8 +328,6 @@ return Container();
                                     .doc(msgDetails!.msgId.toString())
                                     .set(msgDetails!.toMap());
 
-                                // print("msg send  ++++++++++++++++++++++++++++++++++++:::::::::::::::::::::");
-                                // print(widget.chatRoom.lastMsg);
                                 FirebaseFirestore.instance
                                     .collection("chatGroups")
                                     .doc(widget.chatGroup.chatRoomId.toString())

@@ -179,7 +179,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       floatingActionButton: participants.length >= 2
           ? FloatingActionButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (context) => GroupDetails(participants: participants, userData: widget.userData),

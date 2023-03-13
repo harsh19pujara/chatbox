@@ -95,24 +95,30 @@ class _GroupDetailsState extends State<GroupDetails> {
       floatingActionButton: GestureDetector(
         onTap: () async{
           Map<String, dynamic> temp = {};
-          widget.participants.map((e) {
+          List<String> idList = [];
+
+          for(var e in widget.participants){
             temp[e.id.toString()] = false;
-          });
-          var data = ChatGroupModel(
+            idList.add(e.id.toString());
+          }
+
+          print("map" + temp.toString());
+          print("list" + idList.toString());
+          final ChatGroupModel data = ChatGroupModel(
               chatRoomId: uuid.v1(),
-              participants: widget.participants,
+              participants: idList,
               lastMsg: "",
               lastMsgTime: null,
               onlineParticipants: temp,
               groupName: groupNameController.text,
               groupProfile: "",
               groupDescription: "",
-              admins: [widget.userData]);
+              admins: [widget.userData.id.toString()]);
 
           try {
-            await FirebaseFirestore.instance.collection("chatGroups").doc(data.chatRoomId).set(data.toMap()).then((value) {
+            await FirebaseFirestore.instance.collection("chatGroups").doc(data.chatRoomId.toString()).set(data.toMap()).then((value) {
               print("group created");
-              Navigator.push(context, MaterialPageRoute(builder: (context) => GroupChat(chatGroup: data, currentUser: widget.userData),));
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GroupChat(chatGroup: data, currentUser: widget.userData),));
             });
           } on Exception catch (e) {
             throw e.toString();
