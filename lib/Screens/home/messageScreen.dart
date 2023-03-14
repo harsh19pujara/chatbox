@@ -1,6 +1,8 @@
+import 'package:chatting_app/Model/chatGroupModel.dart';
 import 'package:chatting_app/Model/chatModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/home/chatScreen.dart';
+import 'package:chatting_app/Screens/home/groupChatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +26,6 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-
     if (state == AppLifecycleState.resumed) {
       if (mounted) {
         setState(() {
@@ -72,33 +73,77 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                   .orderBy("lastMsgTime", descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                // print(snapshot.data!.docs.toList());
-                if (snapshot.hasData) {
-                  if (snapshot.data!.docs.isNotEmpty) {
-                    List notNullRooms = snapshot.data!.docs
-                        .map((e) {
-                          var tempModel = ChatModel.fromJson(e.data());
-                          if (tempModel.lastMsg != "" || tempModel.lastMsgTime != null) {
-                            return tempModel;
+                if (snapshot.hasData || snapshot.hasError) {
+                  return StreamBuilder(
+                    stream: FirebaseFirestore.instance
+                        .collection("chatGroups")
+                        .where("participants", arrayContains: widget.userData.id.toString())
+                        .orderBy("lastMsgTime", descending: true)
+                        .snapshots(),
+                    builder: (context, groupSnapshot) {
+                      if (snapshot.data!.docs.isNotEmpty) {
+                        // modeling personal chats into custom map data
+                        List<Map<String, dynamic>> groupChatList = [];
+                        List<Map<String, dynamic>> personalChatList = [];
+                        List allRecentChatList = [];
+
+                        personalChatList = snapshot.data!.docs
+                            .map((e) {
+                              var personalChatModel = ChatModel.fromJson(e.data());
+                              if (personalChatModel.lastMsg != "" || personalChatModel.lastMsgTime != null) {
+                                Map<String, dynamic> mapData = {
+                                  "data": personalChatModel,
+                                  "time": personalChatModel.lastMsgTime!.toDate(),
+                                  "type": "personalChat"
+                                };
+                                allRecentChatList.add(mapData);
+                                return mapData;
+                              }
+                            })
+                            .whereType<Map<String, dynamic>>()
+                            .toList();
+
+                        if (groupSnapshot.hasData) {
+                          if (groupSnapshot.data!.docs.isNotEmpty) {
+                            groupChatList = groupSnapshot.data!.docs.map((e) {
+                              var groupChatModel = ChatGroupModel.fromJson(e.data());
+                              Map<String, dynamic> mapData = {
+                                "data": groupChatModel,
+                                "time": groupChatModel.lastMsgTime!.toDate(),
+                                "type": "groupChat"
+                              };
+                              allRecentChatList.add(mapData);
+                              return mapData;
+                            }).toList();
                           }
-                        })
-                        .whereType<ChatModel>()
-                        .toList();
+                        }
 
-                    print(notNullRooms);
+                        allRecentChatList.sort((b, a) {
+                          DateTime aTime = a["time"];
+                          DateTime bTime = b["time"];
+                          return aTime.compareTo(bTime);
+                        });
 
-                    return ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: notNullRooms.length,
-                      itemBuilder: (context, index) {
-                        return recentChatWidget(notNullRooms[index]);
-                      },
-                    );
-                  } else if (snapshot.hasError) {
-                    return const Center(child: Text("Error Fetching Data", style: TextStyle(fontSize: 18)));
-                  } else {
-                    return const Center(child: Text("Start Chatting With Friends", style: TextStyle(fontSize: 18)));
-                  }
+                        return ListView.builder(
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: allRecentChatList.length,
+                          itemBuilder: (context, index) {
+                            if (allRecentChatList[index]["type"] == "personalChat") {
+                              return recentChatWidget(allRecentChatList[index]["data"]);
+                            } else if (allRecentChatList[index]["type"] == "groupChat") {
+                              return recentGroupWidget(allRecentChatList[index]["data"]);
+                            } else {
+                              return const Text("Type Error");
+                            }
+                          },
+                        );
+                      } else if (snapshot.hasError) {
+                        return const Center(child: Text("Error Fetching Data", style: TextStyle(fontSize: 18)));
+                      } else {
+                        return const Center(child: Text("Start Chatting With Friends", style: TextStyle(fontSize: 18)));
+                      }
+                    },
+                  );
                 } else {
                   return const Center(
                       child: Text(
@@ -137,18 +182,16 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
     for (var element in data.participants!) {
       if (element.toString() != widget.userData.id.toString()) {
         otherUser = element;
-        // print("other user = " + otherUser);
       }
     }
-    // print(data.toString());
     return otherUser != null
         ? StreamBuilder(
+            // Stream builder for continuous online offline status of user
             stream: FirebaseFirestore.instance.collection("users").doc(otherUser).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.data != null) {
                 UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
-                // print("user data" + searchedUser.toMap().toString());
-                print("profile url " + searchedUser.profile.toString());
+
                 return InkWell(
                   onTap: () {
                     Navigator.push(
@@ -159,24 +202,23 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                         ));
                   },
                   child: Container(
-                    // color:Colors.blueAccent,
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     height: 70,
-                    // decoration: BoxDecoration(
-                    // borderRadius: BorderRadius.circular(100)
-                    // ),
-                    // color: Colors.grey,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       child: Row(
                         children: [
                           Stack(children: [
-                             CircleAvatar(
-                               backgroundColor: const Color(0xFFa8e5f0),
-                              backgroundImage: searchedUser.profile != "" && searchedUser.profile != null ? NetworkImage(searchedUser.profile.toString()) : null,
+                            CircleAvatar(
+                              backgroundColor: const Color(0xFFa8e5f0),
+                              backgroundImage: searchedUser.profile != "" && searchedUser.profile != null
+                                  ? NetworkImage(searchedUser.profile.toString())
+                                  : null,
                               radius: 26,
-                               child: searchedUser.profile != "" && searchedUser.profile != null ? null : const Icon(Icons.person,color: Colors.white),
-                               ),
+                              child: searchedUser.profile != "" && searchedUser.profile != null
+                                  ? null
+                                  : const Icon(Icons.person, color: Colors.white),
+                            ),
                             Positioned(
                               bottom: 3,
                               right: 3,
@@ -244,6 +286,75 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
             },
           )
         : const Center(child: CircularProgressIndicator());
+  }
+
+  Widget recentGroupWidget(ChatGroupModel data) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => GroupChat(chatGroup: data, currentUser: widget.userData)));
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        height: 70,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: const Color(0xFFa8e5f0),
+                backgroundImage:
+                    data.groupProfile != "" && data.groupProfile != null ? NetworkImage(data.groupProfile.toString()) : null,
+                radius: 26,
+                child:
+                    data.groupProfile != "" && data.groupProfile != null ? null : const Icon(Icons.person, color: Colors.white),
+              ),
+              const SizedBox(
+                width: 10,
+              ),
+              SizedBox(
+                width: 150,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data.groupName.toString(),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                    ),
+                    Text(
+                      data.lastMsg.toString().replaceAll('\n', ' '),
+                      style: const TextStyle(fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(
+                width: 25,
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: const [
+                    Text(
+                      '5 min ago',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Color(0xFFF04A4C),
+                      child: Text('5'),
+                    )
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget ownStory(String img) {

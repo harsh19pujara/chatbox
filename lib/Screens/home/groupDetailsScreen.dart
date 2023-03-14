@@ -108,7 +108,7 @@ class _GroupDetailsState extends State<GroupDetails> {
               chatRoomId: uuid.v1(),
               participants: idList,
               lastMsg: "",
-              lastMsgTime: null,
+              lastMsgTime: Timestamp.now(),
               onlineParticipants: temp,
               groupName: groupNameController.text,
               groupProfile: "",

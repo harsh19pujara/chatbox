@@ -136,18 +136,21 @@ class _ChatScreenState extends State<ChatScreen> {
               const SizedBox(
                 width: 15,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.searchedUser!.name.toString(),
-                    style: const TextStyle(color: Colors.black, fontSize: 22),
-                  ),
-                  Text(
-                    widget.searchedUser!.email.toString(),
-                    style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w400),
-                  )
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.searchedUser!.name.toString(),
+                      style: const TextStyle(color: Colors.black, fontSize: 22),
+                    ),
+                    Text(
+                      widget.searchedUser!.email.toString(),
+                      style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w400),
+                      overflow: TextOverflow.fade,
+                    )
+                  ],
+                ),
               )
             ],
           ),
@@ -254,11 +257,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               itemBuilder: (context, index) {
                                 if (chatRoomSnapshot.hasData) {
                                   if (messageList[index].senderId.toString() != widget.currentUser.id.toString()) {
-                                    print("condition ${messageList[index].msg} ${widget.currentUser.id.toString()} ");
                                     bool isOnline = chatRoomSnapshot.data!["online"][widget.currentUser.id];
-                                    print(isOnline.toString());
                                     if (isOnline == true && messageList[index].seen == false) {
-                                      print("try updating");
                                       updateMessageOnlineStatus(messageList[index].msgId.toString(), true);
                                     }
                                   }
@@ -362,8 +362,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                                   ));
                                             },
                                             child: Container(
-                                              padding: EdgeInsets.all(3),
-                                              margin: EdgeInsets.symmetric(vertical: 3),
+                                              padding: const EdgeInsets.all(3),
+                                              margin: const EdgeInsets.symmetric(vertical: 3),
                                               child: Image.network(
                                                 messageList[index].msg.toString(),
                                                 fit: BoxFit.fitHeight,
