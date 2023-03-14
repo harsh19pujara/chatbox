@@ -48,7 +48,7 @@ class _GroupChatState extends State<GroupChat> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        toolbarHeight: 70,
+        toolbarHeight: 65,
         leadingWidth: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -185,7 +185,7 @@ class _GroupChatState extends State<GroupChat> {
                     }).toList();
 
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                       child: ListView.builder(
                         physics: const BouncingScrollPhysics(),
                         reverse: true,
@@ -215,7 +215,6 @@ class _GroupChatState extends State<GroupChat> {
                                   LimitedBox(
                                     maxWidth: 320,
                                     child: Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 3),
                                       padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
                                       decoration: BoxDecoration(
                                           borderRadius: allMsg[index].senderId == widget.currentUser.id
@@ -252,14 +251,6 @@ class _GroupChatState extends State<GroupChat> {
                                     ),
                                   ),
                                 ]),
-                            // Row(
-                            //   mainAxisAlignment: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
-                            //       ? MainAxisAlignment.end
-                            //       : MainAxisAlignment.start,
-                            //   children: [
-                            //
-                            //   ],
-                            // )
                           ]);
                         },
                       ),

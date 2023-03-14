@@ -38,7 +38,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await FirebaseFirestore.instance
         .collection("chatRooms")
         .doc(widget.chatRoom.chatRoomId)
-        .update({"online.${widget.currentUser.id.toString()}": status});
+        .update({"online.${widget.currentUser.id.toString()}": status, "unreadMsg.${widget.currentUser.id.toString()}" : 0});
   }
 
   updateMessageOnlineStatus(String docId, bool status) async {
@@ -206,7 +206,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       await FirebaseFirestore.instance
                                           .collection("chatRooms")
                                           .doc(widget.chatRoom.chatRoomId.toString())
-                                          .update({"lastMsg": ""});
+                                          .update({"lastMsg": "", "unreadMsg.${widget.searchedUser!.id.toString()}" : 0, "unreadMsg.${widget.currentUser.id.toString()}" : 0});
                                     });
                                   });
                                 },
@@ -275,14 +275,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                         children: [
                                           Row(
                                             children: [
-                                              messageList[index].senderId.toString() == widget.currentUser.id.toString()
-                                                  ? Icon(Icons.check,
-                                                      color: messageList[index].seen == true ? Colors.blue : Colors.grey,
-                                                      size: 17)
-                                                  : Container(),
-                                              const SizedBox(width: 2),
                                               LimitedBox(
-                                                maxWidth: 300,
+                                                maxWidth: 320,
                                                 child: Container(
                                                     margin: const EdgeInsets.symmetric(vertical: 3),
                                                     padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
@@ -301,37 +295,50 @@ class _ChatScreenState extends State<ChatScreen> {
                                                                 topRight: Radius.circular(15),
                                                                 topLeft: Radius.zero,
                                                                 bottomLeft: Radius.circular(15))),
-                                                    child: Linkify(
-                                                      onOpen: (link) async {
-                                                        if (await canLaunchUrl(Uri.parse(link.url))) {
-                                                          await launchUrl(
-                                                            Uri.parse(link.url),
-                                                            mode: LaunchMode.externalApplication,
-                                                          );
-                                                        } else {
-                                                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                                                        }
-                                                      },
-                                                      text: messageList[index].msg.toString(),
-                                                      style: TextStyle(
-                                                          fontSize: 18,
-                                                          fontWeight: FontWeight.w400,
-                                                          color: messageList[index].senderId == widget.currentUser.id
-                                                              ? Colors.black
-                                                              : Colors.black),
-                                                      softWrap: true,
-                                                      maxLines: null,
-                                                      linkifiers: const [EmailLinkifier(), UrlLinkifier()],
-                                                      linkStyle: const TextStyle(color: Colors.blueAccent),
-                                                      textAlign: TextAlign.start,
+                                                    child: Row(
+                                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        LimitedBox(
+                                                          maxWidth: 240,
+                                                          child: Linkify(
+                                                            onOpen: (link) async {
+                                                              if (await canLaunchUrl(Uri.parse(link.url))) {
+                                                                await launchUrl(
+                                                                  Uri.parse(link.url),
+                                                                  mode: LaunchMode.externalApplication,
+                                                                );
+                                                              } else {
+                                                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                                                              }
+                                                            },
+                                                            text: messageList[index].msg.toString(),
+                                                            style: TextStyle(
+                                                                fontSize: 18,
+                                                                fontWeight: FontWeight.w400,
+                                                                color: messageList[index].senderId == widget.currentUser.id
+                                                                    ? Colors.black
+                                                                    : Colors.black),
+                                                            softWrap: true,
+                                                            maxLines: null,
+                                                            linkifiers: const [EmailLinkifier(), UrlLinkifier()],
+                                                            linkStyle: const TextStyle(color: Colors.blueAccent),
+                                                            textAlign: TextAlign.start,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 5,
+                                                        ),
+                                                        Text(
+                                                          "${messageList[index].createdOn!.toDate().hour}:${messageList[index].createdOn!.toDate().minute}",
+                                                          style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                                        ),
+                                                        Icon(Icons.check,
+                                                            color: messageList[index].seen == true ? Colors.blue : Colors.grey,
+                                                            size: 17)
+                                                      ],
                                                     )),
                                               ),
-                                              const SizedBox(width: 2),
-                                              messageList[index].senderId.toString() != widget.currentUser.id.toString()
-                                                  ? Icon(Icons.check,
-                                                      color: messageList[index].seen == true ? Colors.blue : Colors.grey,
-                                                      size: 17)
-                                                  : Container()
                                             ],
                                           )
                                         ]),
@@ -444,9 +451,12 @@ class _ChatScreenState extends State<ChatScreen> {
                         radius: 25,
                         child: IconButton(
                             onPressed: () {
+
                               if (msgController.text.isNotEmpty) {
+                                String currentMsg = msgController.text;
+                                msgController.clear();
                                 msgDetails = MessageModel(
-                                    msg: msgController.text,
+                                    msg: currentMsg,
                                     msgId: uuid.v1(),
                                     senderId: widget.currentUser.id,
                                     createdOn: Timestamp.now(),
@@ -458,15 +468,20 @@ class _ChatScreenState extends State<ChatScreen> {
                                       .doc(widget.chatRoom.chatRoomId.toString())
                                       .collection("messages")
                                       .doc(msgDetails!.msgId.toString())
-                                      .set(msgDetails!.toMap());
+                                      .set(msgDetails!.toMap())
+                                      .then((value) async{
+                                        var updateData = {
+                                          "lastMsg": currentMsg,
+                                          "lastMsgTime": msgDetails!.createdOn,
+                                          "unreadMsg.${widget.searchedUser!.id.toString()}" :  await messageIncrement()
+                                        };
 
-                                  // print("msg send  ++++++++++++++++++++++++++++++++++++:::::::::::::::::::::");
-                                  // print(widget.chatRoom.lastMsg);
-                                  FirebaseFirestore.instance
-                                      .collection("chatRooms")
-                                      .doc(widget.chatRoom.chatRoomId.toString())
-                                      .update({"lastMsg": msgController.text.toString(), "lastMsgTime": msgDetails!.createdOn});
-                                  msgController.clear();
+                                        await FirebaseFirestore.instance
+                                        .collection("chatRooms")
+                                        .doc(widget.chatRoom.chatRoomId.toString())
+                                        .update(updateData);
+                                  });
+
                                 }
                               }
                             },
@@ -482,6 +497,17 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
         ));
+  }
+
+  Future<int> messageIncrement() async {
+    var chatData = await FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId).get();
+    var count = chatData.data()!["unreadMsg"][widget.searchedUser!.id.toString()];
+    print("count" + count.toString());
+    var data = count;
+    if(chatData.data()!["online"][widget.searchedUser!.id.toString()] == false){
+      data = count + 1;
+    }
+    return data;
   }
 }
 

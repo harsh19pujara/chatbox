@@ -191,6 +191,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
             builder: (context, snapshot) {
               if (snapshot.data != null) {
                 UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
+                String lastMsgTime = showTime(data.lastMsgTime!.toDate());
 
                 return InkWell(
                   onTap: () {
@@ -262,15 +263,15 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               crossAxisAlignment: CrossAxisAlignment.end,
-                              children: const [
+                              children:  [
                                 Text(
-                                  '5 min ago',
-                                  style: TextStyle(fontSize: 12),
+                                  lastMsgTime,
+                                  style: const TextStyle(fontSize: 12),
                                 ),
-                                CircleAvatar(
+                                data.unreadMsg![widget.userData.id.toString()] == 0 ? Container() :CircleAvatar(
                                   radius: 12,
-                                  backgroundColor: Color(0xFFF04A4C),
-                                  child: Text('5'),
+                                  backgroundColor: const Color(0xFFF04A4C),
+                                  child: Text(data.unreadMsg![widget.userData.id.toString()].toString()),
                                 )
                               ],
                             ),
@@ -289,6 +290,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
   }
 
   Widget recentGroupWidget(ChatGroupModel data) {
+    String lastMsgTime = showTime(data.lastMsgTime!.toDate());
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -337,12 +339,12 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   crossAxisAlignment: CrossAxisAlignment.end,
-                  children: const [
+                  children:  [
                     Text(
-                      '5 min ago',
-                      style: TextStyle(fontSize: 12),
+                      lastMsgTime,
+                      style: const TextStyle(fontSize: 12),
                     ),
-                    CircleAvatar(
+                    const CircleAvatar(
                       radius: 12,
                       backgroundColor: Color(0xFFF04A4C),
                       child: Text('5'),
@@ -380,5 +382,20 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
         ],
       ),
     );
+  }
+
+  String showTime(DateTime time){
+    int timeHr = DateTime.now().difference(time).inMinutes~/60;
+    var timeMin = (DateTime.now().difference(time).inMinutes%60);
+
+    if(timeHr<24){
+      return "${time.hour}:${time.minute}";
+    }
+    else if(timeHr>24){
+      return "Yesterday";
+    }
+    else{
+      return "${time.day}/${time.month}/${time.year}";
+    }
   }
 }

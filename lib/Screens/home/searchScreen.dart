@@ -40,7 +40,8 @@ class _SearchScreenState extends State<SearchScreen> {
           participants: [widget.userData.id.toString(), searchedUser!.id.toString()],
           lastMsg: "",
           lastMsgTime: null,
-          online: {widget.userData.id.toString(): true, searchedUser!.id.toString(): false});
+          online: {widget.userData.id.toString(): true, searchedUser!.id.toString(): false},
+          unreadMsg: {widget.userData.id.toString(): 0, searchedUser!.id.toString(): 0});
 
       print("create room");
       await FirebaseFirestore.instance.collection("chatRooms").doc(chatroom.chatRoomId.toString()).set(chatroom.toMap());
@@ -104,7 +105,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 "People",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 10,),
+              const SizedBox(
+                height: 10,
+              ),
               SizedBox(
                 height: 200,
                 child: StreamBuilder(
@@ -152,7 +155,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                     searchedUserList[index].name.toString(),
                                     style: const TextStyle(color: Colors.white),
                                   ),
-                                  subtitle: Text(searchedUserList[index].email.toString(), style: const TextStyle(color: Colors.white)),
+                                  subtitle:
+                                      Text(searchedUserList[index].email.toString(), style: const TextStyle(color: Colors.white)),
                                   trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white),
                                 ),
                               );

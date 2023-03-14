@@ -7,8 +7,9 @@ class ChatModel{
    String? lastMsg;
    Timestamp? lastMsgTime;
    Map<String,dynamic>? online;
+   Map<String, dynamic>? unreadMsg;
 
-  ChatModel({required this.chatRoomId,required this.participants,required this.lastMsg, required this.lastMsgTime, required this.online});
+  ChatModel({required this.chatRoomId,required this.participants,required this.lastMsg, required this.lastMsgTime, required this.online,required this.unreadMsg});
 
   ChatModel.fromJson(Map<String,dynamic> data){
     chatRoomId  = data["chatRoomId"];
@@ -16,6 +17,7 @@ class ChatModel{
     lastMsg = data["lastMsg"];
     lastMsgTime = data["lastMsgTime"] ;
     online = data["online"];
+    unreadMsg = data["unreadMsg"];
   }
 
   Map<String,dynamic> toMap() =>{
@@ -23,6 +25,7 @@ class ChatModel{
     "participants" : participants,
     "lastMsg" : lastMsg,
     "lastMsgTime" : lastMsgTime,
-    "online" : online
+    "online" : online,
+    "unreadMsg" : unreadMsg
   };
 }
