@@ -38,7 +38,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await FirebaseFirestore.instance
         .collection("chatRooms")
         .doc(widget.chatRoom.chatRoomId)
-        .update({"online.${widget.currentUser.id.toString()}": status, "unreadMsg.${widget.currentUser.id.toString()}" : 0});
+        .update({"online.${widget.currentUser.id.toString()}": status, "unreadMsg.${widget.currentUser.id.toString()}": 0});
   }
 
   updateMessageOnlineStatus(String docId, bool status) async {
@@ -206,7 +206,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                       await FirebaseFirestore.instance
                                           .collection("chatRooms")
                                           .doc(widget.chatRoom.chatRoomId.toString())
-                                          .update({"lastMsg": "", "unreadMsg.${widget.searchedUser!.id.toString()}" : 0, "unreadMsg.${widget.currentUser.id.toString()}" : 0});
+                                          .update({
+                                        "lastMsg": "",
+                                        "unreadMsg.${widget.searchedUser!.id.toString()}": 0,
+                                        "unreadMsg.${widget.currentUser.id.toString()}": 0
+                                      });
                                     });
                                   });
                                 },
@@ -451,7 +455,6 @@ class _ChatScreenState extends State<ChatScreen> {
                         radius: 25,
                         child: IconButton(
                             onPressed: () {
-
                               if (msgController.text.isNotEmpty) {
                                 String currentMsg = msgController.text;
                                 msgController.clear();
@@ -469,19 +472,18 @@ class _ChatScreenState extends State<ChatScreen> {
                                       .collection("messages")
                                       .doc(msgDetails!.msgId.toString())
                                       .set(msgDetails!.toMap())
-                                      .then((value) async{
-                                        var updateData = {
-                                          "lastMsg": currentMsg,
-                                          "lastMsgTime": msgDetails!.createdOn,
-                                          "unreadMsg.${widget.searchedUser!.id.toString()}" :  await messageIncrement()
-                                        };
+                                      .then((value) async {
+                                    var updateData = {
+                                      "lastMsg": currentMsg,
+                                      "lastMsgTime": msgDetails!.createdOn,
+                                      "unreadMsg.${widget.searchedUser!.id.toString()}": await messageIncrement()
+                                    };
 
-                                        await FirebaseFirestore.instance
+                                    await FirebaseFirestore.instance
                                         .collection("chatRooms")
                                         .doc(widget.chatRoom.chatRoomId.toString())
                                         .update(updateData);
                                   });
-
                                 }
                               }
                             },
@@ -502,9 +504,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<int> messageIncrement() async {
     var chatData = await FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId).get();
     var count = chatData.data()!["unreadMsg"][widget.searchedUser!.id.toString()];
-    print("count" + count.toString());
+    // print("count" + count.toString());
     var data = count;
-    if(chatData.data()!["online"][widget.searchedUser!.id.toString()] == false){
+    if (chatData.data()!["online"][widget.searchedUser!.id.toString()] == false) {
       data = count + 1;
     }
     return data;
@@ -519,10 +521,16 @@ class ShowImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: SafeArea(
           top: true,
           bottom: true,
-          child: Container(height: double.maxFinite, width: double.maxFinite, color: Colors.black, child: Image.network(imgUrl))),
+          child: Center(
+              child: InteractiveViewer(
+                  maxScale: double.infinity,
+                  clipBehavior: Clip.none,
+                  boundaryMargin: const EdgeInsets.all(0),
+                  child: Image.network(imgUrl)))),
     );
   }
 }

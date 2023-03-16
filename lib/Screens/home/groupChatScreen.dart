@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chatting_app/Model/chatGroupModel.dart';
 import 'package:chatting_app/Model/messageModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
@@ -5,6 +7,7 @@ import 'package:chatting_app/Screens/home/profileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 class GroupChat extends StatefulWidget {
@@ -22,6 +25,10 @@ class _GroupChatState extends State<GroupChat> {
   MessageModel? msgDetails;
   List<UserModel> participantData = [];
   Map<String, String> participantsName = {};
+  MessageModel? prevMsg;
+  MessageModel? currentMsg;
+  bool showUserName = false;
+  File? chatImage;
 
   @override
   void initState() {
@@ -31,20 +38,56 @@ class _GroupChatState extends State<GroupChat> {
     updateUnreadMsg();
     super.initState();
   }
-  
-  updateUnreadMsg() async{
+
+  openImagePicker() async {
+    var file = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (file != null) {
+      chatImage = File(file.path);
+      uploadImage();
+    }
+  }
+
+  uploadImage() async {
+    var uploadedFile =
+        await FirebaseStorage.instance.ref(widget.chatGroup.chatRoomId.toString()).child(uuid.v1()).putFile(chatImage!);
+
+    String url = await uploadedFile.ref.getDownloadURL();
+
+    if (url.isNotEmpty) {
+      var data = MessageModel(
+          msgType: "img", msg: url, msgId: uuid.v1(), senderId: widget.currentUser.id, createdOn: Timestamp.now(), seen: false);
+
+      await FirebaseFirestore.instance
+          .collection("chatGroups")
+          .doc(widget.chatGroup.chatRoomId.toString())
+          .collection("messages")
+          .doc(data.msgId)
+          .set(data.toMap())
+          .then((value) async {
+        await FirebaseFirestore.instance
+            .collection("chatGroups")
+            .doc(widget.chatGroup.chatRoomId)
+            .update({"lastMsgTime": data.createdOn, "lastMsg": "Photo"});
+      });
+    }
+  }
+
+  updateUnreadMsg() async {
     List uploadData = [];
-    for(Map e in widget.chatGroup.unreadMsg!){
+    for (Map e in widget.chatGroup.unreadMsg!) {
       e.forEach((key, value) {
         if (key.toString() != widget.currentUser.id.toString()) {
-          uploadData.add({key : value});
+          uploadData.add({key: value});
         }
         if (key.toString() == widget.currentUser.id.toString()) {
-          uploadData.add({key : 0});
+          uploadData.add({key: 0});
         }
       });
     }
-    await FirebaseFirestore.instance.collection("chatGroups").doc(widget.chatGroup.chatRoomId.toString()).update({"unreadMsg" : uploadData});
+    await FirebaseFirestore.instance
+        .collection("chatGroups")
+        .doc(widget.chatGroup.chatRoomId.toString())
+        .update({"unreadMsg": uploadData});
   }
 
   Future<void> fetchFriendsDetails() async {
@@ -58,7 +101,7 @@ class _GroupChatState extends State<GroupChat> {
 
   @override
   Widget build(BuildContext context) {
-    print("user data" + participantData.toString());
+    print("user data$participantData");
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -163,7 +206,7 @@ class _GroupChatState extends State<GroupChat> {
                                 //   }).then((value) async {
                                 //     Navigator.pop(context);
                                 //     await FirebaseFirestore.instance
-                                //         .collection("chatRooms")
+                                //         .collection("chatGroups")
                                 //         .doc(widget.chatGroup.chatRoomId.toString())
                                 //         .update({"lastMsg": ""});
                                 //   });
@@ -207,70 +250,141 @@ class _GroupChatState extends State<GroupChat> {
                         reverse: true,
                         itemCount: allMsg.length,
                         itemBuilder: (context, index) {
-                          return Column(children: [
-                            const SizedBox(
-                              height: 5,
-                            ),
-                            participantsName[allMsg[index].senderId.toString()] !=
-                                    participantsName[widget.currentUser.id.toString()]
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        participantsName[allMsg[index].senderId.toString()].toString(),
-                                        style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                          prevMsg = currentMsg;
+                          showUserName = false;
+                          currentMsg = allMsg[index];
+                          if (prevMsg != null) {
+                            print("prev msg  ${prevMsg!.msg}  ${prevMsg!.senderId}");
+                            print("curr msg  ${currentMsg!.msg}  ${currentMsg!.senderId}");
+                            if (currentMsg!.senderId != prevMsg!.senderId) {
+                              showUserName = true;
+                            }
+                          }
+                          print(showUserName.toString());
+
+
+                          if (allMsg[index].msgType == "text") {
+                            return Column(children: [
+                              const SizedBox(
+                                height: 3,
+                              ),
+                              Row(
+                                  mainAxisAlignment: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
+                                      ? MainAxisAlignment.end
+                                      : MainAxisAlignment.start,
+                                  children: [
+                                    LimitedBox(
+                                      maxWidth: 320,
+                                      child: Container(
+                                        padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+                                        decoration: BoxDecoration(
+                                            borderRadius: allMsg[index].senderId == widget.currentUser.id
+                                                ? const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.zero,
+                                                    topLeft: Radius.circular(15),
+                                                    bottomLeft: Radius.circular(15))
+                                                : const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.circular(15),
+                                                    topLeft: Radius.zero,
+                                                    bottomLeft: Radius.circular(15)),
+                                            color: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
+                                                ? const Color(0xFFb3f2c7)
+                                                : const Color(0xFFa8e5f0)),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            LimitedBox(
+                                              maxWidth: 240,
+                                              child: Text(allMsg[index].msg.toString(),
+                                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
+                                            ),
+                                            const SizedBox(
+                                              width: 5,
+                                            ),
+                                            Text(
+                                              "${allMsg[index].createdOn!.toDate().hour}:${allMsg[index].createdOn!.toDate().minute}",
+                                              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                            ),
+                                            Icon(Icons.check,
+                                                color: allMsg[index].seen == true ? Colors.blue : Colors.grey, size: 17)
+                                          ],
+                                        ),
                                       ),
-                                    ],
-                                  )
-                                : Container(),
-                            Row(
-                                mainAxisAlignment: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
+                                    ),
+                                  ]),
+                              participantsName[allMsg[index].senderId.toString()] !=
+                                      participantsName[widget.currentUser.id.toString()]
+                                  ? (showUserName
+                                      ? const SizedBox(
+                                          height: 10,
+                                        )
+                                      : Container())
+                                  : Container(),
+
+                              // participantsName[allMsg[index].senderId.toString()] !=
+                              //     participantsName[widget.currentUser.id.toString()] ?
+                              prevMsg != null ? Row(
+                                mainAxisAlignment: prevMsg!.senderId.toString() == widget.currentUser.id
                                     ? MainAxisAlignment.end
                                     : MainAxisAlignment.start,
                                 children: [
+                                  showUserName
+                                      ? Text(
+                                          participantsName[prevMsg!.senderId.toString()].toString(),
+                                          style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                                        )
+                                      : Container(),
+                                ],
+                              )
+                              : Container()
+                            ]);
+                          }
+                          else if (allMsg[index].msgType == "img") {
+                            return Row(
+                                mainAxisAlignment: allMsg[index].senderId == widget.currentUser.id
+                                    ? MainAxisAlignment.end
+                                    : MainAxisAlignment.start,
+                                children: [
+                                  allMsg[index].senderId == widget.currentUser.id
+                                      ? Icon(
+                                    Icons.check,
+                                    color: allMsg[index].seen! ? Colors.blueAccent : Colors.grey,
+                                  )
+                                      : Container(),
                                   LimitedBox(
-                                    maxWidth: 320,
-                                    child: Container(
-                                      padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
-                                      decoration: BoxDecoration(
-                                          borderRadius: allMsg[index].senderId == widget.currentUser.id
-                                              ? const BorderRadius.only(
-                                                  bottomRight: Radius.circular(15),
-                                                  topRight: Radius.zero,
-                                                  topLeft: Radius.circular(15),
-                                                  bottomLeft: Radius.circular(15))
-                                              : const BorderRadius.only(
-                                                  bottomRight: Radius.circular(15),
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.zero,
-                                                  bottomLeft: Radius.circular(15)),
-                                          color: allMsg[index].senderId.toString() == widget.currentUser.id.toString()
-                                              ? const Color(0xFFb3f2c7)
-                                              : const Color(0xFFa8e5f0)),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          LimitedBox(
-                                            maxWidth: 240,
-                                            child: Text(allMsg[index].msg.toString(),
-                                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
-                                          ),
-                                          const SizedBox(
-                                            width: 5,
-                                          ),
-                                          Text(
-                                            "${allMsg[index].createdOn!.toDate().hour}:${allMsg[index].createdOn!.toDate().minute}",
-                                            style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                                          ),
-                                          Icon(Icons.check,
-                                              color: allMsg[index].seen == true ? Colors.blue : Colors.grey, size: 17)
-                                        ],
+                                    maxWidth: MediaQuery.of(context).size.width / 2,
+                                    maxHeight: MediaQuery.of(context).size.height / 3,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ShowGroupImage(imgUrl: allMsg[index].msg.toString()),
+                                            ));
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        margin: const EdgeInsets.symmetric(vertical: 3),
+                                        child: Image.network(
+                                          allMsg[index].msg.toString(),
+                                          fit: BoxFit.fitHeight,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ]),
-                          ]);
+                                  allMsg[index].senderId != widget.currentUser.id
+                                      ? Icon(
+                                    Icons.check,
+                                    color: allMsg[index].seen! ? Colors.blueAccent : Colors.grey,
+                                  )
+                                      : Container(),
+                                ]);
+                          } else {
+                            return Container();
+                          }
                         },
                       ),
                     );
@@ -291,7 +405,7 @@ class _GroupChatState extends State<GroupChat> {
                 children: [
                   ElevatedButton(
                       onPressed: () {
-                        // openImagePicker();
+                        openImagePicker();
                       },
                       style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.all(2),
@@ -394,5 +508,27 @@ class _GroupChatState extends State<GroupChat> {
       });
     }
     return unreadMsg;
+  }
+}
+
+class ShowGroupImage extends StatefulWidget {
+  final String imgUrl;
+
+  const ShowGroupImage({required this.imgUrl, Key? key}) : super(key: key);
+
+  @override
+  State<ShowGroupImage> createState() => _ShowGroupImageState();
+}
+
+class _ShowGroupImageState extends State<ShowGroupImage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+          top: true,
+          bottom: true,
+          child: Center(child: InteractiveViewer(child:  Image.network(widget.imgUrl),))
+      ));
   }
 }
