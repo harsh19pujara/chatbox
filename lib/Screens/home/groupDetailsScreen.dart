@@ -96,10 +96,12 @@ class _GroupDetailsState extends State<GroupDetails> {
         onTap: () async{
           Map<String, dynamic> temp = {};
           List<String> idList = [];
+          List<Map<String, dynamic>> unreadMsgList = [];
 
           for(var e in widget.participants){
             temp[e.id.toString()] = false;
             idList.add(e.id.toString());
+            unreadMsgList.add({e.id.toString() : 0});
           }
 
           print("map" + temp.toString());
@@ -113,7 +115,9 @@ class _GroupDetailsState extends State<GroupDetails> {
               groupName: groupNameController.text,
               groupProfile: "",
               groupDescription: "",
-              admins: [widget.userData.id.toString()]);
+              admins: [widget.userData.id.toString()],
+            unreadMsg: unreadMsgList
+          );
 
           try {
             await FirebaseFirestore.instance.collection("chatGroups").doc(data.chatRoomId.toString()).set(data.toMap()).then((value) {

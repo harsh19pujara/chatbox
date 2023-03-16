@@ -28,7 +28,23 @@ class _GroupChatState extends State<GroupChat> {
     fetchFriendsDetails().then((value) {
       setState(() {});
     });
+    updateUnreadMsg();
     super.initState();
+  }
+  
+  updateUnreadMsg() async{
+    List uploadData = [];
+    for(Map e in widget.chatGroup.unreadMsg!){
+      e.forEach((key, value) {
+        if (key.toString() != widget.currentUser.id.toString()) {
+          uploadData.add({key : value});
+        }
+        if (key.toString() == widget.currentUser.id.toString()) {
+          uploadData.add({key : 0});
+        }
+      });
+    }
+    await FirebaseFirestore.instance.collection("chatGroups").doc(widget.chatGroup.chatRoomId.toString()).update({"unreadMsg" : uploadData});
   }
 
   Future<void> fetchFriendsDetails() async {
@@ -233,19 +249,22 @@ class _GroupChatState extends State<GroupChat> {
                                               : const Color(0xFFa8e5f0)),
                                       child: Row(
                                         crossAxisAlignment: CrossAxisAlignment.end,
-                                        mainAxisSize: MainAxisSize.min ,
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           LimitedBox(
                                             maxWidth: 240,
                                             child: Text(allMsg[index].msg.toString(),
                                                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
                                           ),
-                                          const SizedBox(width: 5,),
+                                          const SizedBox(
+                                            width: 5,
+                                          ),
                                           Text(
                                             "${allMsg[index].createdOn!.toDate().hour}:${allMsg[index].createdOn!.toDate().minute}",
                                             style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
                                           ),
-                                          Icon(Icons.check, color: allMsg[index].seen == true ? Colors.blue : Colors.grey, size: 17)
+                                          Icon(Icons.check,
+                                              color: allMsg[index].seen == true ? Colors.blue : Colors.grey, size: 17)
                                         ],
                                       ),
                                     ),
@@ -311,10 +330,12 @@ class _GroupChatState extends State<GroupChat> {
                       backgroundColor: const Color(0xFF20A090),
                       radius: 25,
                       child: IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (msgController.text.isNotEmpty) {
+                              String msg = msgController.text;
+                              msgController.clear();
                               msgDetails = MessageModel(
-                                  msg: msgController.text,
+                                  msg: msg,
                                   msgId: uuid.v1(),
                                   senderId: widget.currentUser.id,
                                   createdOn: Timestamp.now(),
@@ -328,11 +349,16 @@ class _GroupChatState extends State<GroupChat> {
                                     .doc(msgDetails!.msgId.toString())
                                     .set(msgDetails!.toMap());
 
+                                Map<String, dynamic> uploadData = {
+                                  "lastMsg": msg,
+                                  "lastMsgTime": msgDetails!.createdOn,
+                                  "unreadMsg": await unreadMsgIncrement()
+                                };
+
                                 FirebaseFirestore.instance
                                     .collection("chatGroups")
                                     .doc(widget.chatGroup.chatRoomId.toString())
-                                    .update({"lastMsg": msgController.text.toString(), "lastMsgTime": msgDetails!.createdOn});
-                                msgController.clear();
+                                    .update(uploadData);
                               }
                             }
                           },
@@ -349,5 +375,24 @@ class _GroupChatState extends State<GroupChat> {
         ),
       ),
     );
+  }
+
+  Future<List<Map<String, dynamic>>> unreadMsgIncrement() async {
+    List<Map<String, dynamic>> unreadMsg = [];
+
+    var data = await FirebaseFirestore.instance.collection("chatGroups").doc(widget.chatGroup.chatRoomId).get();
+    List temp = data.data()!["unreadMsg"];
+
+    for (Map e in temp) {
+      e.forEach((key, value) {
+        if (key.toString() != widget.currentUser.id) {
+          unreadMsg.add({key.toString(): value + 1});
+        }
+        if (key.toString() == widget.currentUser.id) {
+          unreadMsg.add({key.toString(): value});
+        }
+      });
+    }
+    return unreadMsg;
   }
 }
