@@ -67,9 +67,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
         ),
         Expanded(
           child: Stack(
-
             children: [
-
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -419,12 +417,11 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
   }
 
   String showTime(DateTime time) {
-    int timeHr = DateTime.now().difference(time).inMinutes ~/ 60;
-    var timeMin = (DateTime.now().difference(time).inMinutes % 60);
+    int timeHr = DateTime.now().difference(time).inDays;
 
-    if (timeHr < 24) {
-      return "${time.hour}:${time.minute}";
-    } else if (timeHr > 24) {
+    if (timeHr == 0) {
+      return "${time.hour}:${time.minute.toString().padLeft(2,"0")}";
+    } else if (timeHr == 1) {
       return "Yesterday";
     } else {
       return "${time.day}/${time.month}/${time.year}";

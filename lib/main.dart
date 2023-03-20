@@ -9,10 +9,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-Future<void> main() async{
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MaterialApp(debugShowCheckedModeBanner: false ,home: MyApp(),));
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData.light(),
+    home: MyApp(),
+  ));
 }
 
 class MyApp extends StatefulWidget {
@@ -29,41 +33,38 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    Timer(Duration(seconds: 2),() {
-      checkIfLogin();
-    },);
-     print('1');
+    Timer(
+      Duration(seconds: 2),
+      () {
+        checkIfLogin();
+      },
+    );
+    print('1');
     super.initState();
-      print("3");
+    print("3");
 
-      // print("4");
-
-
+    // print("4");
   }
 
-  checkIfLogin() async{
-
-     auth.authStateChanges().listen((User? user) async{
-      if(user != null){
+  checkIfLogin() async {
+    auth.authStateChanges().listen((User? user) async {
+      if (user != null) {
         DocumentSnapshot data = await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
-        var temp = data.data() as Map<String,dynamic>;
+        var temp = data.data() as Map<String, dynamic>;
         userData = UserModel.fromJson(temp);
         if (this.mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(userData: userData!) ));
-
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(userData: userData!)));
         }
         // setState(() {
         //   userLoginFlag = true;
         // });
-      }else{
+      } else {
         if (this.mounted) {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
-
         }
       }
     });
   }
-
 
   @override
   Widget build(BuildContext context) {

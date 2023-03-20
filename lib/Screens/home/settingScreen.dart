@@ -88,7 +88,6 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print("in build"+widget.userData.toMap().toString());
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -148,7 +147,6 @@ class _SettingScreenState extends State<SettingScreen> {
                                       await FirebaseStorage.instance.ref("ProfilePics").child(widget.userData.id.toString()).delete().then((value) async{
                                         Navigator.pop(context);
                                         await FirebaseFirestore.instance.collection("users").doc(widget.userData.id.toString()).update({"profile" : ""}).then((value) async{
-                                          print("done delete");
                                           await gettingUserData();
                                         });
                                       });

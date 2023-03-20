@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key, required this.chatRoom, required this.currentUser, required this.searchedUser}) : super(key: key);
@@ -54,19 +55,14 @@ class _ChatScreenState extends State<ChatScreen> {
     var file = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (file != null) {
       chatImage = File(file.path);
-      uploadImage();
-    }
-  }
 
-  uploadImage() async {
-    var uploadedFile =
-        await FirebaseStorage.instance.ref(widget.chatRoom.chatRoomId.toString()).child(uuid.v1()).putFile(chatImage!);
-
-    String url = await uploadedFile.ref.getDownloadURL();
-
-    if (url.isNotEmpty) {
       var data = MessageModel(
-          msgType: "img", msg: url, msgId: uuid.v1(), senderId: widget.currentUser.id, createdOn: Timestamp.now(), seen: false);
+          msgType: "img",
+          msg: "dummy data",
+          msgId: uuid.v1(),
+          senderId: widget.currentUser.id,
+          createdOn: Timestamp.now(),
+          seen: false);
 
       await FirebaseFirestore.instance
           .collection("chatRooms")
@@ -74,7 +70,25 @@ class _ChatScreenState extends State<ChatScreen> {
           .collection("messages")
           .doc(data.msgId)
           .set(data.toMap())
-          .then((value) async {
+          .then((value) {
+        uploadImage(data: data);
+      });
+    }
+  }
+
+  uploadImage({required MessageModel data}) async {
+    var uploadedFile =
+        await FirebaseStorage.instance.ref(widget.chatRoom.chatRoomId.toString()).child(uuid.v1()).putFile(chatImage!);
+
+    String url = await uploadedFile.ref.getDownloadURL();
+
+    if (url.isNotEmpty) {
+      await FirebaseFirestore.instance
+          .collection("chatRooms")
+          .doc(widget.chatRoom.chatRoomId.toString())
+          .collection("messages")
+          .doc(data.msgId)
+          .update({"msg": url}).then((value) async {
         await FirebaseFirestore.instance
             .collection("chatRooms")
             .doc(widget.chatRoom.chatRoomId)
@@ -277,73 +291,69 @@ class _ChatScreenState extends State<ChatScreen> {
                                             ? MainAxisAlignment.end
                                             : MainAxisAlignment.start,
                                         children: [
-                                          Row(
-                                            children: [
-                                              LimitedBox(
-                                                maxWidth: 320,
-                                                child: Container(
-                                                    margin: const EdgeInsets.symmetric(vertical: 3),
-                                                    padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
-                                                    decoration: BoxDecoration(
-                                                        color: messageList[index].senderId == widget.currentUser.id
-                                                            ? const Color(0xFFb3f2c7)
-                                                            : const Color(0xFFa8e5f0),
-                                                        borderRadius: messageList[index].senderId == widget.currentUser.id
-                                                            ? const BorderRadius.only(
-                                                                bottomRight: Radius.circular(15),
-                                                                topRight: Radius.zero,
-                                                                topLeft: Radius.circular(15),
-                                                                bottomLeft: Radius.circular(15))
-                                                            : const BorderRadius.only(
-                                                                bottomRight: Radius.circular(15),
-                                                                topRight: Radius.circular(15),
-                                                                topLeft: Radius.zero,
-                                                                bottomLeft: Radius.circular(15))),
-                                                    child: Row(
-                                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: [
-                                                        LimitedBox(
-                                                          maxWidth: 240,
-                                                          child: Linkify(
-                                                            onOpen: (link) async {
-                                                              if (await canLaunchUrl(Uri.parse(link.url))) {
-                                                                await launchUrl(
-                                                                  Uri.parse(link.url),
-                                                                  mode: LaunchMode.externalApplication,
-                                                                );
-                                                              } else {
-                                                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                                                              }
-                                                            },
-                                                            text: messageList[index].msg.toString(),
-                                                            style: TextStyle(
-                                                                fontSize: 18,
-                                                                fontWeight: FontWeight.w400,
-                                                                color: messageList[index].senderId == widget.currentUser.id
-                                                                    ? Colors.black
-                                                                    : Colors.black),
-                                                            softWrap: true,
-                                                            maxLines: null,
-                                                            linkifiers: const [EmailLinkifier(), UrlLinkifier()],
-                                                            linkStyle: const TextStyle(color: Colors.blueAccent),
-                                                            textAlign: TextAlign.start,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 5,
-                                                        ),
-                                                        Text(
-                                                          "${messageList[index].createdOn!.toDate().hour}:${messageList[index].createdOn!.toDate().minute}",
-                                                          style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                                                        ),
-                                                        Icon(Icons.check,
-                                                            color: messageList[index].seen == true ? Colors.blue : Colors.grey,
-                                                            size: 17)
-                                                      ],
-                                                    )),
-                                              ),
-                                            ],
+                                          LimitedBox(
+                                            maxWidth: 320,
+                                            child: Container(
+                                                margin: const EdgeInsets.symmetric(vertical: 2),
+                                                padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+                                                decoration: BoxDecoration(
+                                                    color: messageList[index].senderId == widget.currentUser.id
+                                                        ? const Color(0xFFb3f2c7)
+                                                        : const Color(0xFFa8e5f0),
+                                                    borderRadius: messageList[index].senderId == widget.currentUser.id
+                                                        ? const BorderRadius.only(
+                                                            bottomRight: Radius.circular(15),
+                                                            topRight: Radius.zero,
+                                                            topLeft: Radius.circular(15),
+                                                            bottomLeft: Radius.circular(15))
+                                                        : const BorderRadius.only(
+                                                            bottomRight: Radius.circular(15),
+                                                            topRight: Radius.circular(15),
+                                                            topLeft: Radius.zero,
+                                                            bottomLeft: Radius.circular(15))),
+                                                child: Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    LimitedBox(
+                                                      maxWidth: 240,
+                                                      child: Linkify(
+                                                        onOpen: (link) async {
+                                                          if (await canLaunchUrl(Uri.parse(link.url))) {
+                                                            await launchUrl(
+                                                              Uri.parse(link.url),
+                                                              mode: LaunchMode.externalApplication,
+                                                            );
+                                                          } else {
+                                                            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                                                          }
+                                                        },
+                                                        text: messageList[index].msg.toString(),
+                                                        style: TextStyle(
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.w400,
+                                                            color: messageList[index].senderId == widget.currentUser.id
+                                                                ? Colors.black
+                                                                : Colors.black),
+                                                        softWrap: true,
+                                                        maxLines: null,
+                                                        linkifiers: const [EmailLinkifier(), UrlLinkifier()],
+                                                        linkStyle: const TextStyle(color: Colors.blueAccent),
+                                                        textAlign: TextAlign.start,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(
+                                                      width: 5,
+                                                    ),
+                                                    Text(
+                                                      "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
+                                                      style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                                    ),
+                                                    Icon(Icons.check,
+                                                        color: messageList[index].seen == true ? Colors.blue : Colors.grey,
+                                                        size: 17)
+                                                  ],
+                                                )),
                                           )
                                         ]),
                                   );
@@ -351,44 +361,87 @@ class _ChatScreenState extends State<ChatScreen> {
                                 // ****************** SHOW IMAGES IN CHAT *********************
                                 else if (messageList[index].msgType == "img") {
                                   return Row(
-                                      mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
-                                          ? MainAxisAlignment.end
-                                          : MainAxisAlignment.start,
-                                      children: [
-                                        messageList[index].senderId == widget.currentUser.id
-                                            ? Icon(
-                                                Icons.check,
-                                                color: messageList[index].seen! ? Colors.blueAccent : Colors.grey,
-                                              )
-                                            : Container(),
-                                        LimitedBox(
-                                          maxWidth: MediaQuery.of(context).size.width / 2,
-                                          maxHeight: MediaQuery.of(context).size.height / 3,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => ShowImage(imgUrl: messageList[index].msg.toString()),
-                                                  ));
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.all(3),
-                                              margin: const EdgeInsets.symmetric(vertical: 3),
-                                              child: Image.network(
-                                                messageList[index].msg.toString(),
-                                                fit: BoxFit.fitHeight,
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                        ? MainAxisAlignment.end
+                                        : MainAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.symmetric(vertical: 3),
+                                        padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
+                                        decoration: BoxDecoration(
+                                            color: messageList[index].senderId == widget.currentUser.id
+                                                ? const Color(0xFFb3f2c7)
+                                                : const Color(0xFFa8e5f0),
+                                            borderRadius: messageList[index].senderId == widget.currentUser.id
+                                                ? const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.zero,
+                                                    topLeft: Radius.circular(15),
+                                                    bottomLeft: Radius.circular(15))
+                                                : const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.circular(15),
+                                                    topLeft: Radius.zero,
+                                                    bottomLeft: Radius.circular(15))),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            LimitedBox(
+                                              maxWidth: MediaQuery.of(context).size.width / 2,
+                                              maxHeight: MediaQuery.of(context).size.height / 3,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ShowImage(imgUrl: messageList[index].msg.toString()),
+                                                      ));
+                                                },
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  child: CachedNetworkImage(
+                                                      imageUrl: messageList[index].msg.toString(),
+                                                      fit: BoxFit.fill,
+                                                      placeholder: (context, url) => Container(
+                                                            color: Colors.grey,
+                                                            child: const Center(child: CircularProgressIndicator()),
+                                                          ),
+                                                      errorWidget: (context, url, error) {
+                                                        if (url == "dummy data") {
+                                                          return Container(
+                                                            color: Colors.grey,
+                                                            child: const Center(child: CircularProgressIndicator()),
+                                                          );
+                                                        } else {
+                                                          return const Text(
+                                                            " ** An error Occurred while Loading Img **",
+                                                            style: TextStyle(fontStyle: FontStyle.italic),
+                                                          );
+                                                        }
+                                                      }),
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                            const SizedBox(
+                                              height: 2,
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
+                                                  style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                                ),
+                                                Icon(Icons.check,
+                                                    color: messageList[index].seen == true ? Colors.blue : Colors.grey, size: 17),
+                                              ],
+                                            )
+                                          ],
                                         ),
-                                        messageList[index].senderId != widget.currentUser.id
-                                            ? Icon(
-                                                Icons.check,
-                                                color: messageList[index].seen! ? Colors.blueAccent : Colors.grey,
-                                              )
-                                            : Container(),
-                                      ]);
+                                      ),
+                                    ],
+                                  );
                                 } else {
                                   return Container();
                                 }
