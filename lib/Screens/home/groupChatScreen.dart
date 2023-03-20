@@ -204,31 +204,31 @@ class _GroupChatState extends State<GroupChat> {
                           ),
                           TextButton(
                               onPressed: () async {
-                                // await FirebaseFirestore.instance
-                                //     .collection("chatGroups")
-                                //     .doc(widget.chatGroup.chatRoomId.toString())
-                                //     .collection("messages")
-                                //     .get()
-                                //     .then((value) {
-                                //   for (var docs in value.docs) {
-                                //     docs.reference.delete();
-                                //   }
-                                // }).then((value) async {
-                                //   await FirebaseStorage.instance
-                                //       .ref(widget.chatGroup.chatRoomId.toString())
-                                //       .listAll()
-                                //       .then((value) {
-                                //     for (var element in value.items) {
-                                //       element.delete();
-                                //     }
-                                //   }).then((value) async {
-                                //     Navigator.pop(context);
-                                //     await FirebaseFirestore.instance
-                                //         .collection("chatGroups")
-                                //         .doc(widget.chatGroup.chatRoomId.toString())
-                                //         .update({"lastMsg": ""});
-                                //   });
-                                // });
+                                await FirebaseFirestore.instance
+                                    .collection("chatGroups")
+                                    .doc(widget.chatGroup.chatRoomId.toString())
+                                    .collection("messages")
+                                    .get()
+                                    .then((value) {
+                                  for (var docs in value.docs) {
+                                    docs.reference.delete();
+                                  }
+                                }).then((value) async {
+                                  await FirebaseStorage.instance
+                                      .ref(widget.chatGroup.chatRoomId.toString())
+                                      .listAll()
+                                      .then((value) {
+                                    for (var element in value.items) {
+                                      element.delete();
+                                    }
+                                  }).then((value) async {
+                                    Navigator.pop(context);
+                                    await FirebaseFirestore.instance
+                                        .collection("chatGroups")
+                                        .doc(widget.chatGroup.chatRoomId.toString())
+                                        .update({"lastMsg": ""});
+                                  });
+                                });
                               },
                               child: const Text("Delete", style: TextStyle(color: Colors.red, fontSize: 18)))
                         ],
