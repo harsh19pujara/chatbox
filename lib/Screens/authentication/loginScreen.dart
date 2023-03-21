@@ -1,4 +1,5 @@
 import 'package:chatting_app/Functionality/authentication.dart';
+import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Screens/home/home.dart';
 import 'package:chatting_app/Screens/welcomeScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -28,13 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: Colors.white,
+      backgroundColor: CustomColor.authenticationBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading:
             IconButton(onPressed: () {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
             }, icon: const Icon(Icons.arrow_back,color: Colors.black,)),
       ),
       body: Container(
@@ -54,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 20,
                 ),
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 70),
+                  padding: EdgeInsets.symmetric(horizontal: 60),
                   child: Text(
                       'Welcome back! Sign in using your social account or email to continue us',textAlign: TextAlign.center,),
                 ),
@@ -87,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: email,
                   decoration: const InputDecoration(
                       labelText: 'Email',
-                      labelStyle: TextStyle(color: Color(0xFF24786D))),
+                      labelStyle: TextStyle(color: CustomColor.authenticationLabel)),
                 ),
                 TextFormField(
                   validator: (value) {
@@ -106,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       showPass = !showPass;
                     });}, icon: Icon(showPass ? Icons.visibility : Icons.visibility_off)),
                       labelText: 'Password',
-                      labelStyle: TextStyle(color: Color(0xFF24786D))),
+                      labelStyle: const TextStyle(color: CustomColor.authenticationLabel)),
                   obscureText: showPass,
                 ),
                 const SizedBox(
@@ -121,21 +122,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       print('************  name  ${value!.name}  id ${value.email}  ${value.id}');
                       isLoading = false;
                       FirebaseFirestore.instance.collection("users").doc(auth.currentUser!.uid).update({"isOnline": true});
-                      Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>  HomeScreen(userData: value,)));
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
+                          builder: (context) =>  HomeScreen(userData: value,)), (route) => false);
                     });
 
                   }
                   else{
                     const snackBar = SnackBar(
                       content: Text('Please Recheck the details'),
-                      duration: Duration(seconds: 3),
+                      duration: Duration(seconds: 2),
                     );
                     ScaffoldMessenger.of(context).showSnackBar(snackBar);
                   }
-                },child: customButton(color: const Color(0xFF24786D),text: 'Log in', txtColor: Colors.white)),
+                },child: customButton(color: CustomColor.authenticationButtonColor,text: 'Log in', txtColor: CustomColor.authenticationButtonText)),
                 const SizedBox(
                   height: 25,
                 ),
@@ -143,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onTap: () {},
                   child: const Text('Forgot Password ?',
                       style: TextStyle(
-                          color: Color(0xFF24786D), fontWeight: FontWeight.w400,fontSize: 18)),
+                          color: CustomColor.authenticationButtonColor, fontWeight: FontWeight.w400,fontSize: 18)),
                 )
               ],
             ),

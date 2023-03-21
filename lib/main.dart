@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/authentication/loginScreen.dart';
 import 'package:chatting_app/Screens/home/home.dart';
@@ -12,12 +13,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MaterialApp(
+  runApp( MaterialApp(
     debugShowCheckedModeBanner: false,
-    theme: ThemeData.light(),
-    home: MyApp(),
+    theme: CustomTheme.lightTheme(),
+    home: const MyApp(),
   ));
 }
+
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -34,16 +36,13 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     Timer(
-      Duration(seconds: 2),
+      const Duration(seconds: 1),
       () {
         checkIfLogin();
       },
     );
-    print('1');
     super.initState();
-    print("3");
 
-    // print("4");
   }
 
   checkIfLogin() async {

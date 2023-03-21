@@ -1,3 +1,4 @@
+import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Model/chatGroupModel.dart';
 import 'package:chatting_app/Model/chatModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
@@ -217,6 +218,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
           String lastMsgTime = showTime(data.lastMsgTime!.toDate());
 
           return InkWell(
+
             onTap: () {
               Navigator.push(
                   context,
@@ -233,7 +235,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                   children: [
                     Stack(children: [
                       CircleAvatar(
-                        backgroundColor: const Color(0xFFa8e5f0),
+                        backgroundColor: CustomColor.friendColor,
                         backgroundImage: searchedUser.profile != "" && searchedUser.profile != null
                             ? NetworkImage(searchedUser.profile.toString())
                             : null,
@@ -252,8 +254,8 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                           decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: searchedUser.isOnline != null
-                                  ? (searchedUser.isOnline! ? const Color(0xFF0FE16D) : Colors.grey)
-                                  : Colors.red),
+                                  ? (searchedUser.isOnline! ? CustomColor.online : CustomColor.offline)
+                                  : CustomColor.unreadMsg),
                         ),
                       )
                     ]),
@@ -268,11 +270,11 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                         children: [
                           Text(
                             searchedUser.name.toString(),
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                            style:Theme.of(context).textTheme.bodyLarge,
                           ),
                           Text(
                             data.lastMsg.toString().replaceAll('\n', ' '),
-                            style: const TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                             overflow: TextOverflow.ellipsis,
                           )
                         ],
@@ -288,13 +290,13 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                         children: [
                           Text(
                             lastMsgTime,
-                            style: const TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                           data.unreadMsg![widget.userData.id.toString()] == 0
                               ? Container()
                               : CircleAvatar(
                                   radius: 12,
-                                  backgroundColor: const Color(0xFFF04A4C),
+                                  backgroundColor: CustomColor.unreadMsg,
                                   child: Text(data.unreadMsg![widget.userData.id.toString()].toString()),
                                 )
                         ],
@@ -336,7 +338,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFFa8e5f0),
+                backgroundColor: CustomColor.friendColor,
                 backgroundImage:
                     data.groupProfile != "" && data.groupProfile != null ? NetworkImage(data.groupProfile.toString()) : null,
                 radius: 26,
@@ -354,11 +356,11 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                   children: [
                     Text(
                       data.groupName.toString(),
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     Text(
                       data.lastMsg.toString().replaceAll('\n', ' '),
-                      style: const TextStyle(fontSize: 12),
+                      style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     )
                   ],
@@ -374,11 +376,11 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                   children: [
                     Text(
                       lastMsgTime,
-                      style: const TextStyle(fontSize: 12),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     unreadMsg == 0 ? Container() :CircleAvatar(
                       radius: 12,
-                      backgroundColor: const Color(0xFFF04A4C),
+                      backgroundColor: CustomColor.unreadMsg,
                       child: Text(unreadMsg.toString()),
                     )
                   ],

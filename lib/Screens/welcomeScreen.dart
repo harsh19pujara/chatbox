@@ -2,6 +2,7 @@ import 'package:chatting_app/Screens/authentication/signUpScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:chatting_app/widgets/widgets.dart';
 import 'package:chatting_app/Screens/authentication/loginScreen.dart';
+import 'package:chatting_app/main.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({Key? key}) : super(key: key);
@@ -39,17 +40,17 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     Text(
                       'Connect',
-                      style: TextStyle(fontSize: height / 14, fontWeight: FontWeight.w500, color: Colors.white),
+                      style: Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w500,color: Colors.white),
                     ),
-                    Text('friends', style: TextStyle(fontSize: height / 14, fontWeight: FontWeight.w500, color: Colors.white)),
-                    Text('easily &', style: TextStyle(fontSize: height / 14, fontWeight: FontWeight.w900, color: Colors.white)),
-                    Text('quickly', style: TextStyle(fontSize: height / 14, fontWeight: FontWeight.w900, color: Colors.white)),
+                    Text('friends', style: Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w500)),
+                    Text('easily &', style : Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w900)),
+                    Text('quickly', style: Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w900)),
                     SizedBox(
                       height: height / 28,
                     ),
                     Text(
                       'Our chat app is the perfect way to stay connected with friends and family.',
-                      style: TextStyle(fontSize: height / 45, fontWeight: FontWeight.w300, color: Colors.white),
+                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.w300),
                     ),
                     SizedBox(height: height / 28),
                     Row(
@@ -68,7 +69,7 @@ class WelcomeScreen extends StatelessWidget {
                     Center(
                         child: GestureDetector(
                             onTap: () {
-                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SignUpScreen()));
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUpScreen()));
                             },
                             child: customButton(color: Colors.white, text: 'Sign up with Email', txtColor: Colors.black))),
                     SizedBox(
@@ -83,7 +84,7 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
                           },
                           child: Text(
                             'Log In',

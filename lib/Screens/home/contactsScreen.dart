@@ -23,11 +23,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
   getPermission() async {
     if (await Permission.contacts.isGranted) {
       contacts = await ContactsService.getContacts();
-      setState(() {});
+      if (contacts.isNotEmpty) {
+        setState(() {});
+      }
     } else {
       await Permission.contacts.request().then((value) async{
         contacts = await ContactsService.getContacts();
-        setState(() {});
+      }).then((value) {
+        if (mounted) {
+          setState(() {});
+        }
       });
     }
   }
@@ -66,8 +71,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
     var contactNum = contacts[index].phones![0].value;
     String letter = contacts[index].displayName![0].trim();
     bool showLetter = true;
-    print(letter);
-
 
     if (index > 0) {
       if(contacts[index].displayName![0].trim() == contacts[index-1].displayName![0].trim()){
@@ -75,20 +78,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
       }
     }
 
-    return Container(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          showLetter ? Text(letter.toUpperCase(),style: const TextStyle(fontSize: 18,fontWeight: FontWeight.w500),) : Container(),
-          showLetter ? const SizedBox(height: 5,) : Container(),
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 0),
-            leading: const CircleAvatar(backgroundColor: Color(0xFFa8e5f0),child: Icon(Icons.person),),
-            title: Text(contacts[index].displayName.toString()),
-            subtitle: Text(contactNum.toString()),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        showLetter ? Text(letter.toUpperCase(),style: const TextStyle(fontSize: 18,fontWeight: FontWeight.w500),) : Container(),
+        showLetter ? const SizedBox(height: 5,) : Container(),
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          leading: const CircleAvatar(backgroundColor: Color(0xFFa8e5f0),child: Icon(Icons.person),),
+          title: Text(contacts[index].displayName.toString()),
+          subtitle: Text(contactNum.toString()),
+        ),
+      ],
     );
   }
 }

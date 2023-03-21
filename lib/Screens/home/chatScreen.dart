@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Model/chatModel.dart';
 import 'package:chatting_app/Model/messageModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
@@ -128,7 +129,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   )),
               CircleAvatar(
                 radius: 25,
-                backgroundColor: const Color(0xFFa8e5f0),
+                backgroundColor: CustomColor.friendColor,
                 backgroundImage: widget.searchedUser!.profile != "" && widget.searchedUser!.profile != null
                     ? NetworkImage(widget.searchedUser!.profile.toString())
                     : null,
@@ -156,11 +157,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Text(
                       widget.searchedUser!.name.toString(),
-                      style: const TextStyle(color: Colors.black, fontSize: 22),
+                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 22),
                     ),
                     Text(
                       widget.searchedUser!.email.toString(),
-                      style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w400),
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w400),
                       overflow: TextOverflow.fade,
                     )
                   ],

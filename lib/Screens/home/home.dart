@@ -62,8 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
   AppBar customAppBar(int index) {
     List screenTile = ["Home", "Calls", "Contacts", "Settings"];
     return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
       leadingWidth: 80,
       leading: Container(
         margin: const EdgeInsets.fromLTRB(15, 15, 0, 0),
@@ -92,12 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       title: Text(
         screenTile[index],
-        style: const TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w400,
-        ),
+        style: Theme.of(context).textTheme.titleLarge,
       ),
-      centerTitle: true,
       toolbarHeight: 100,
       actions: [
         appBarRightWidget(index),

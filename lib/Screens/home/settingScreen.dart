@@ -1,3 +1,4 @@
+import 'package:chatting_app/Helper/themes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -165,7 +166,7 @@ class _SettingScreenState extends State<SettingScreen> {
                           backgroundImage: userDataLatest != null ? (userDataLatest!.profile != null && userDataLatest!.profile != ""
                               ? NetworkImage(userDataLatest!.profile.toString())
                               : null) : null,
-                          backgroundColor: Colors.greenAccent,
+                          backgroundColor: CustomColor.userColor,
                           child: userDataLatest != null ?(userDataLatest!.profile != null && userDataLatest!.profile != ""
                               ? Container() :
                               const Center(
@@ -184,9 +185,9 @@ class _SettingScreenState extends State<SettingScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(widget.userData.name.toString(),
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500), overflow: TextOverflow.fade),
+                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 24), overflow: TextOverflow.fade),
                           Text(widget.userData.email.toString(),
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300))
+                              style: Theme.of(context).textTheme.bodySmall!.copyWith(fontSize: 16, fontWeight: FontWeight.w300))
                         ],
                       ),
                     ),
@@ -235,13 +236,13 @@ class _SettingScreenState extends State<SettingScreen> {
                             (route) => false);
                       });
                     },
-                    child: const Text(
+                    child: Text(
                       "Log Out",
-                      style: TextStyle(fontSize: 18, color: Colors.black),
+                      style: Theme.of(context).textTheme.bodyLarge,
                     )),
                 const SizedBox(height: 15,),
                 Text(widget.userData.id.toString(),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400)),
+                    style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -269,8 +270,8 @@ class _SettingScreenState extends State<SettingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500), overflow: TextOverflow.fade),
-                Text(details, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300))
+                Text(name, style: Theme.of(context).textTheme.bodyLarge, overflow: TextOverflow.fade),
+                Text(details, style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w300))
               ],
             ),
           ),
