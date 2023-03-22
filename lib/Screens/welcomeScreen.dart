@@ -15,6 +15,9 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
+
+          toolbarHeight: 60,
+          automaticallyImplyLeading: false,
           elevation: 0,
           backgroundColor: Colors.transparent,
           title: SizedBox(height: height / 20, child: Image.asset('assets/images/loginAppBarLogo.png')),
@@ -80,7 +83,7 @@ class WelcomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Existing Account ?  ',
-                          style: TextStyle(color: Colors.white, fontSize: height / 46),
+                          style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         GestureDetector(
                           onTap: () {
@@ -88,7 +91,7 @@ class WelcomeScreen extends StatelessWidget {
                           },
                           child: Text(
                             'Log In',
-                            style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white, fontSize: height / 44),
+                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white,fontWeight: FontWeight.w500),
                           ),
                         )
                       ],

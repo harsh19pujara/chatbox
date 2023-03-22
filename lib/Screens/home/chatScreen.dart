@@ -112,8 +112,6 @@ class _ChatScreenState extends State<ChatScreen> {
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
           toolbarHeight: 70,
           leadingWidth: 0,
           title: Row(
@@ -157,7 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Text(
                       widget.searchedUser!.name.toString(),
-                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 22),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(
                       widget.searchedUser!.email.toString(),
@@ -182,7 +180,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: const Text("Do you want to Delete All Chats and Photos ? "),
+                        title: Text(
+                          "Do you want to Delete All Chats and Photos ? ",
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
                         content: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -190,9 +191,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 onPressed: () {
                                   Navigator.pop(context);
                                 },
-                                child: const Text(
+                                child: Text(
                                   "Cancel",
-                                  style: TextStyle(color: Colors.black, fontSize: 18),
+                                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontSize: 18),
                                 )),
                             const SizedBox(
                               width: 10,
@@ -229,7 +230,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                     });
                                   });
                                 },
-                                child: const Text("Delete", style: TextStyle(color: Colors.red, fontSize: 18)))
+                                child: Text("Delete",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge!
+                                        .copyWith(color: CustomColor.unreadMsg, fontSize: 18)))
                           ],
                         ),
                       );
@@ -299,8 +304,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                                 padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
                                                 decoration: BoxDecoration(
                                                     color: messageList[index].senderId == widget.currentUser.id
-                                                        ? const Color(0xFFb3f2c7)
-                                                        : const Color(0xFFa8e5f0),
+                                                        ? CustomColor.userColor
+                                                        : CustomColor.friendColor,
                                                     borderRadius: messageList[index].senderId == widget.currentUser.id
                                                         ? const BorderRadius.only(
                                                             bottomRight: Radius.circular(15),
@@ -330,12 +335,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                                           }
                                                         },
                                                         text: messageList[index].msg.toString(),
-                                                        style: TextStyle(
-                                                            fontSize: 18,
-                                                            fontWeight: FontWeight.w400,
-                                                            color: messageList[index].senderId == widget.currentUser.id
-                                                                ? Colors.black
-                                                                : Colors.black),
+                                                        style: Theme.of(context).textTheme.bodyMedium,
                                                         softWrap: true,
                                                         maxLines: null,
                                                         linkifiers: const [EmailLinkifier(), UrlLinkifier()],
@@ -348,7 +348,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                                     ),
                                                     Text(
                                                       "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
-                                                      style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall!
+                                                          .copyWith(fontStyle: FontStyle.italic),
                                                     ),
                                                     Icon(Icons.check,
                                                         color: messageList[index].seen == true ? Colors.blue : Colors.grey,
@@ -416,9 +419,12 @@ class _ChatScreenState extends State<ChatScreen> {
                                                             child: const Center(child: CircularProgressIndicator()),
                                                           );
                                                         } else {
-                                                          return const Text(
+                                                          return Text(
                                                             " ** An error Occurred while Loading Img **",
-                                                            style: TextStyle(fontStyle: FontStyle.italic),
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .bodySmall!
+                                                                .copyWith(fontStyle: FontStyle.italic),
                                                           );
                                                         }
                                                       }),
@@ -432,7 +438,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                               children: [
                                                 Text(
                                                   "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
-                                                  style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall!
+                                                      .copyWith(fontStyle: FontStyle.italic),
                                                 ),
                                                 Icon(Icons.check,
                                                     color: messageList[index].seen == true ? Colors.blue : Colors.grey, size: 17),
@@ -497,6 +506,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             filled: true,
                             fillColor: Colors.black12,
                             hintText: "Enter Text...",
+                            hintStyle: TextStyle(fontSize: 18),
                             enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.all(Radius.circular(10)),
                                 borderSide: BorderSide(color: Colors.transparent))),

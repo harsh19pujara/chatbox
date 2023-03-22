@@ -24,7 +24,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
     if (await Permission.contacts.isGranted) {
       contacts = await ContactsService.getContacts();
       if (contacts.isNotEmpty) {
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       }
     } else {
       await Permission.contacts.request().then((value) async{

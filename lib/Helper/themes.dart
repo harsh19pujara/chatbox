@@ -6,18 +6,20 @@ class CustomTheme {
       brightness: Brightness.light,
       textTheme: const TextTheme(
         headlineLarge: TextStyle(fontSize: 56, color: Colors.white),
+        headlineMedium: TextStyle(fontWeight: FontWeight.w500, fontSize: 32,color: Colors.black),
         headlineSmall: TextStyle(fontSize: 16, color: Colors.white),
         titleLarge: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w400,
           color: CustomColor.white
         ),
+        titleMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.w500,color: Colors.black),
         bodyLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w500,color: Colors.black),
-        bodyMedium: TextStyle(),
+        bodyMedium: TextStyle(fontSize: 18,fontWeight: FontWeight.w400,color: Colors.black),
         bodySmall: TextStyle(fontSize: 12,color: Colors.black),
       ),
 
-      inputDecorationTheme: const InputDecorationTheme(labelStyle: TextStyle(color: CustomColor.authenticationLabel)),
+      inputDecorationTheme: const InputDecorationTheme(labelStyle: TextStyle(fontSize: 16,color: CustomColor.authenticationLabel),),
       appBarTheme: const AppBarTheme(
         toolbarHeight: 100,
         backgroundColor: Colors.transparent,

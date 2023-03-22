@@ -35,7 +35,9 @@ class _GroupChatState extends State<GroupChat> {
   @override
   void initState() {
     fetchFriendsDetails().then((value) {
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     });
     updateUnreadMsg();
     super.initState();

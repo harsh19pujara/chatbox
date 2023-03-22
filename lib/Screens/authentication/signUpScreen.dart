@@ -19,7 +19,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final Authentication _auth = Authentication();
-  static final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _singUpFormKey = GlobalKey<FormState>();
   late UserModel temp;
   FirebaseAuth auth = FirebaseAuth.instance;
   bool showPass = false;
@@ -34,6 +34,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool isLoading = false;
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
 
     double height = MediaQuery.of(context).size.height;
@@ -44,14 +49,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
-            },
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.black,
-            )),
+        toolbarHeight: 70,
+        leading: Padding(
+          padding: const EdgeInsets.only(top: 3),
+          child: IconButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+              },
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+              )),
+        ),
       ),
       body: isLoading == false
           ? Container(
@@ -59,31 +68,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Form(
-                    key: formKey,
+                    key: _singUpFormKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const SizedBox(
-                          height: 30,
+                          height: 10,
                         ),
-                        const Text(
+                         Text(
                           'Sign up with Email',
-                          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 32,),
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
                         const SizedBox(
                           height: 20,
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 40),
+                         Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
                           child: Text(
                             'Get chatting with friends and family today by signing up for our chat app!',
                             textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
                           ),
                         ),
                         const SizedBox(
-                          height: 60,
+                          height: 30,
                         ),
                         TextFormField(
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
                           keyboardType: TextInputType.name,
                           controller: name,
                           textCapitalization: TextCapitalization.words,
@@ -95,10 +106,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             }
                           },
                           decoration:
-                              const InputDecoration(labelText: 'Your Name', labelStyle: TextStyle(color: CustomColor.authenticationLabel)),
+                               InputDecoration(labelText: 'Your Name', labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
                           keyboardType: TextInputType.emailAddress,
                           controller: email,
                           validator: (value) {
@@ -109,10 +121,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             }
                           },
                           decoration:
-                              const InputDecoration(labelText: 'Your Email', labelStyle: TextStyle(color:CustomColor.authenticationLabel)),
+                               InputDecoration(labelText: 'Your Email', labelStyle:Theme.of(context).inputDecorationTheme.labelStyle),
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
                           validator: (value) {
                             if (value!.length < 8) {
                               return 'Please enter 8 digit password';
@@ -125,11 +138,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           decoration:
                               InputDecoration(suffixIcon: IconButton(onPressed: (){setState(() {
                                 showPass = !showPass;
-                              });}, icon: Icon(!showPass ? Icons.visibility_off : Icons.visibility)),labelText: 'Password', labelStyle: const TextStyle(color: CustomColor.authenticationLabel)),
+                              });}, icon: Icon(!showPass ? Icons.visibility_off : Icons.visibility)),labelText: 'Password', labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
                           obscureText: showPass,
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
                           validator: (value) {
                             if (value != checkPass) {
                               return 'Password does not match !! Please Re-enter';
@@ -140,16 +154,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           decoration:  InputDecoration(suffixIcon: IconButton(onPressed: (){setState(() {
                             showConfirmPass = !showConfirmPass;
                           });}, icon: Icon(!showConfirmPass ? Icons.visibility_off : Icons.visibility,)),
-                              labelText: 'Confirm Password', labelStyle: const TextStyle(color: CustomColor.authenticationLabel)),
+                              labelText: 'Confirm Password', labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
                           obscureText: showConfirmPass,
                         ),
                         SizedBox(
-                          height: height / 8,
+                          height: height / 11,
                         ),
                         GestureDetector(
                             onTap: () async {
                               print("Value $isLoading");
-                              if (formKey.currentState!.validate()) {
+                              if (_singUpFormKey.currentState!.validate()) {
                                 setState(() {
                                   isLoading = true;
                                 });
@@ -185,14 +199,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
           : Center(
               child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(
+              children:  [
+                const CircularProgressIndicator(),
+                const SizedBox(
                   height: 30,
                 ),
                 Text(
                   "Creating Account...",
-                  style: TextStyle(fontSize: 22),
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w400),
                 )
               ],
             )),
