@@ -494,20 +494,21 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: LimitedBox(
                       maxHeight: 70,
                       child: TextField(
+                        style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
                         controller: msgController,
                         textCapitalization: TextCapitalization.sentences,
                         maxLines: null,
                         keyboardType: TextInputType.multiline,
-                        decoration: const InputDecoration(
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                        decoration:  InputDecoration(
+                            focusedBorder: const OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(15)),
                                 borderSide: BorderSide(color: Colors.transparent)),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                             filled: true,
                             fillColor: Colors.black12,
                             hintText: "Enter Text...",
-                            hintStyle: TextStyle(fontSize: 18),
-                            enabledBorder: OutlineInputBorder(
+                            hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.blueGrey),
+                            enabledBorder: const OutlineInputBorder(
                                 borderRadius: BorderRadius.all(Radius.circular(10)),
                                 borderSide: BorderSide(color: Colors.transparent))),
                       ),

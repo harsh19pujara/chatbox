@@ -496,19 +496,21 @@ class _GroupChatState extends State<GroupChat> {
                       child: LimitedBox(
                         maxHeight: 70,
                         child: TextField(
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
                           controller: msgController,
                           textCapitalization: TextCapitalization.sentences,
                           maxLines: null,
                           keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
+                          decoration:  InputDecoration(
+                              focusedBorder: const OutlineInputBorder(
                                   borderRadius: BorderRadius.all(Radius.circular(10)),
                                   borderSide: BorderSide(color: Colors.transparent)),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                               filled: true,
                               fillColor: Colors.black12,
                               hintText: "Enter Text...",
-                              enabledBorder: OutlineInputBorder(
+                              hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.blueGrey),
+                              enabledBorder: const OutlineInputBorder(
                                   borderRadius: BorderRadius.all(Radius.circular(10)),
                                   borderSide: BorderSide(color: Colors.transparent))),
                         ),

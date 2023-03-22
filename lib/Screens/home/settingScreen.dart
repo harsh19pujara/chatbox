@@ -78,7 +78,9 @@ class _SettingScreenState extends State<SettingScreen> {
     DocumentSnapshot data =  await FirebaseFirestore.instance.collection("users").doc(widget.userData.id.toString()).get();
     Map<String,dynamic> temp = data.data() as Map<String,dynamic>;
     userDataLatest = UserModel.fromJson(temp);
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:chatting_app/Screens/home/chatScreen.dart';
 import 'package:chatting_app/Screens/home/groupChatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class MessageScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class MessageScreen extends StatefulWidget {
 class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserver {
   FirebaseAuth auth = FirebaseAuth.instance;
   bool isLoading = true;
-
+  bool stopSlide = false;
 
   @override
   void initState() {
@@ -47,9 +48,12 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
     }
   }
 
+  Future<bool> holdDismiss() async {
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-
     return Column(
       children: [
         SizedBox(
@@ -174,7 +178,6 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                 ),
               ),
               isLoading ? const Center(child: CircularProgressIndicator()) : Container(),
-
             ],
           ),
         )
@@ -209,117 +212,162 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
         otherUser = element;
       }
     }
-    return StreamBuilder(
-      // Stream builder for continuous online offline status of user
-      stream: FirebaseFirestore.instance.collection("users").doc(otherUser).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.data != null) {
-          UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
-          String lastMsgTime = showTime(data.lastMsgTime!.toDate());
+    return Dismissible(
+      key: UniqueKey(),
+      secondaryBackground: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+              onPressed: () {
+                print("info");
+                stopSlide = false;
+                setState(() {
 
-          return InkWell(
+                });
+              },
+              icon: Icon(Icons.info)),
+          IconButton(
+              onPressed: () {
+                print("delete");
+                stopSlide = false;
+                setState(() {
 
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatScreen(chatRoom: data, currentUser: widget.userData, searchedUser: searchedUser),
-                  ));
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              height: 70,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                child: Row(
-                  children: [
-                    Stack(children: [
-                      CircleAvatar(
-                        backgroundColor: CustomColor.friendColor,
-                        backgroundImage: searchedUser.profile != "" && searchedUser.profile != null
-                            ? NetworkImage(searchedUser.profile.toString())
-                            : null,
-                        radius: 26,
-                        child: searchedUser.profile != "" && searchedUser.profile != null
-                            ? null
-                            : const Icon(Icons.person, color: Colors.white),
-                      ),
-                      Positioned(
-                        bottom: 3,
-                        right: 3,
-                        child: Container(
-                          height: 10,
-                          width: 10,
-                          // alignment: AlignmentDirectional.bottomEnd,
-                          decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: searchedUser.isOnline != null
-                                  ? (searchedUser.isOnline! ? CustomColor.online : CustomColor.offline)
-                                  : CustomColor.unreadMsg),
-                        ),
-                      )
-                    ]),
-                    const SizedBox(
-                      width: 10,
-                    ),
-                    SizedBox(
-                      width: 150,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            searchedUser.name.toString(),
-                            style:Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          Text(
-                            data.lastMsg.toString().replaceAll('\n', ' '),
-                            style: Theme.of(context).textTheme.bodySmall,
-                            overflow: TextOverflow.ellipsis,
-                          )
-                        ],
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 25,
-                    ),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            lastMsgTime,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          data.unreadMsg![widget.userData.id.toString()] == 0
-                              ? Container()
-                              : CircleAvatar(
-                                  radius: 12,
-                                  backgroundColor: CustomColor.unreadMsg,
-                                  child: Text(data.unreadMsg![widget.userData.id.toString()].toString()),
-                                )
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
-          );
-        } else {
-          return Container();
+                });
+              },
+              icon: Icon(Icons.delete))
+        ],
+      ),
+      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
+      background: Container(
+        width: 50,
+        child: Text("hello"),
+      ),
+      movementDuration: Duration(minutes: 5),
+      direction: stopSlide ? DismissDirection.none : DismissDirection.horizontal,
+      onUpdate:
+          (details) {
+
+        if (details.reached == true) {
+          stopSlide = true;
+
         }
       },
+      resizeDuration: null,
+      confirmDismiss: (direction) {
+        return holdDismiss();
+      },
+      child: StreamBuilder(
+        // Stream builder for continuous online offline status of user
+        stream: FirebaseFirestore.instance.collection("users").doc(otherUser).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.data != null) {
+            UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
+            String lastMsgTime = showTime(data.lastMsgTime!.toDate());
+
+            return InkWell(
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatScreen(chatRoom: data, currentUser: widget.userData, searchedUser: searchedUser),
+                    ));
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                height: 70,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: Row(
+                    children: [
+                      Stack(children: [
+                        CircleAvatar(
+                          backgroundColor: CustomColor.friendColor,
+                          backgroundImage: searchedUser.profile != "" && searchedUser.profile != null
+                              ? NetworkImage(searchedUser.profile.toString())
+                              : null,
+                          radius: 26,
+                          child: searchedUser.profile != "" && searchedUser.profile != null
+                              ? null
+                              : const Icon(Icons.person, color: Colors.white),
+                        ),
+                        Positioned(
+                          bottom: 3,
+                          right: 3,
+                          child: Container(
+                            height: 10,
+                            width: 10,
+                            // alignment: AlignmentDirectional.bottomEnd,
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: searchedUser.isOnline != null
+                                    ? (searchedUser.isOnline! ? CustomColor.online : CustomColor.offline)
+                                    : CustomColor.unreadMsg),
+                          ),
+                        )
+                      ]),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      SizedBox(
+                        width: 150,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              searchedUser.name.toString(),
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            Text(
+                              data.lastMsg.toString().replaceAll('\n', ' '),
+                              style: Theme.of(context).textTheme.bodySmall,
+                              overflow: TextOverflow.ellipsis,
+                            )
+                          ],
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 25,
+                      ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              lastMsgTime,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            data.unreadMsg![widget.userData.id.toString()] == 0
+                                ? Container()
+                                : CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: CustomColor.unreadMsg,
+                                    child: Text(data.unreadMsg![widget.userData.id.toString()].toString()),
+                                  )
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            );
+          } else {
+            return Container();
+          }
+        },
+      ),
     );
   }
 
   Widget recentGroupWidget(ChatGroupModel data) {
     String lastMsgTime = showTime(data.lastMsgTime!.toDate());
     int unreadMsg = 0;
-    for(Map e in data.unreadMsg!){
+    for (Map e in data.unreadMsg!) {
       e.forEach((key, value) {
-        if(key.toString() == widget.userData.id.toString()){
+        if (key.toString() == widget.userData.id.toString()) {
           unreadMsg = value;
         }
       });
@@ -378,11 +426,13 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                       lastMsgTime,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    unreadMsg == 0 ? Container() :CircleAvatar(
-                      radius: 12,
-                      backgroundColor: CustomColor.unreadMsg,
-                      child: Text(unreadMsg.toString()),
-                    )
+                    unreadMsg == 0
+                        ? Container()
+                        : CircleAvatar(
+                            radius: 12,
+                            backgroundColor: CustomColor.unreadMsg,
+                            child: Text(unreadMsg.toString()),
+                          )
                   ],
                 ),
               )
@@ -422,7 +472,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
     int timeHr = DateTime.now().difference(time).inDays;
 
     if (timeHr == 0) {
-      return "${time.hour}:${time.minute.toString().padLeft(2,"0")}";
+      return "${time.hour}:${time.minute.toString().padLeft(2, "0")}";
     } else if (timeHr == 1) {
       return "Yesterday";
     } else {
