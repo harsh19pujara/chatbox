@@ -43,6 +43,10 @@ dependencies:
   contacts_service:
   permission_handler:
   cached_network_image: ^3.2.3
+  file_picker: ^5.2.6
+  video_player: ^2.6.0
+  flutter_pdfview: ^1.2.9
+  video_thumbnail: ^0.5.3
 
 #  flutter_contacts:
   # The following adds the Cupertino Icons font to your application.

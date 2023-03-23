@@ -8,11 +8,13 @@ import 'package:chatting_app/Screens/home/profileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key, required this.chatRoom, required this.currentUser, required this.searchedUser}) : super(key: key);
@@ -28,7 +30,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final uuid = const Uuid();
   MessageModel? msgDetails;
   TextEditingController msgController = TextEditingController();
-  File? chatImage;
+  File? chatFile;
+  File? thumbFile;
 
   @override
   void initState() {
@@ -53,17 +56,34 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   openImagePicker() async {
-    var file = await ImagePicker().pickImage(source: ImageSource.gallery);
+    String msgType = '';
+    var file = await FilePicker.platform.pickFiles();
     if (file != null) {
-      chatImage = File(file.path);
+      String path = file.files.single.path!;
+      chatFile = File(path);
+      String extension = path.trim().split(".").last;
+      print("extension  " + extension);
+
+      if (extension == "jpg" || extension == "png") {
+        msgType = "img";
+      } else if (extension == "mp4") {
+        msgType = "video";
+        final thumbData = await VideoThumbnail.thumbnailFile(video: path, imageFormat: ImageFormat.PNG, quality: 80);
+        thumbFile = File(thumbData.toString());
+      } else if (extension == "pdf") {
+        msgType = "pdf";
+      } else {
+        msgType = "random";
+      }
 
       var data = MessageModel(
-          msgType: "img",
-          msg: "dummy data",
-          msgId: uuid.v1(),
-          senderId: widget.currentUser.id,
-          createdOn: Timestamp.now(),
-          seen: false);
+        msgType: msgType,
+        msg: "dummy data",
+        msgId: uuid.v1(),
+        senderId: widget.currentUser.id,
+        createdOn: Timestamp.now(),
+        seen: false,
+      );
 
       await FirebaseFirestore.instance
           .collection("chatRooms")
@@ -78,22 +98,42 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   uploadImage({required MessageModel data}) async {
+    TaskSnapshot uploadedThumbnail;
+    Map<String, dynamic> chatBoxData = {};
+
     var uploadedFile =
-        await FirebaseStorage.instance.ref(widget.chatRoom.chatRoomId.toString()).child(uuid.v1()).putFile(chatImage!);
+        await FirebaseStorage.instance.ref(widget.chatRoom.chatRoomId.toString()).child(data.msgId.toString()).putFile(chatFile!);
+    String urlFile = await uploadedFile.ref.getDownloadURL();
+    Map<String, dynamic> sendData = {"msg": urlFile};
+    print("file done");
 
-    String url = await uploadedFile.ref.getDownloadURL();
+    if (data.msgType == "img") {
+      chatBoxData = {"lastMsgTime": data.createdOn, "lastMsg": "Photo"};
+    } else if (data.msgType == "video") {
+      print("thumb uploading");
+      uploadedThumbnail = await FirebaseStorage.instance
+          .ref(widget.chatRoom.chatRoomId.toString())
+          .child("Thumbnails")
+          .child(data.msgId.toString())
+          .putFile(thumbFile!);
+      print("thumb uploaded");
+      String urlThumb = await uploadedThumbnail.ref.getDownloadURL();
+      print("url generated");
+      sendData["thumbnail"] = urlThumb;
+      chatBoxData = {"lastMsgTime": data.createdOn, "lastMsg": "Video"};
+    } else {
+      chatBoxData = {"lastMsgTime": data.createdOn, "lastMsg": "Unknown Data"};
+    }
 
-    if (url.isNotEmpty) {
+    if (urlFile.isNotEmpty) {
       await FirebaseFirestore.instance
           .collection("chatRooms")
           .doc(widget.chatRoom.chatRoomId.toString())
           .collection("messages")
           .doc(data.msgId)
-          .update({"msg": url}).then((value) async {
-        await FirebaseFirestore.instance
-            .collection("chatRooms")
-            .doc(widget.chatRoom.chatRoomId)
-            .update({"lastMsgTime": data.createdOn, "lastMsg": "Photo"});
+          .update(sendData)
+          .then((value) async {
+        await FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId).update(chatBoxData);
       });
     }
   }
@@ -287,7 +327,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                     }
                                   }
                                 }
-                                //*************************   SHOW TEXT IN CHAT   *******************************
+
+                                ///*************************   SHOW TEXT IN CHAT   *******************************
                                 if (messageList[index].msgType == "text") {
                                   return SizedBox(
                                     // color: Colors.blueGrey,
@@ -300,8 +341,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                           LimitedBox(
                                             maxWidth: 320,
                                             child: Container(
-                                                margin: const EdgeInsets.symmetric(vertical: 2),
-                                                padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+                                                margin: const EdgeInsets.symmetric(vertical: 1.5),
+                                                padding: const EdgeInsets.fromLTRB(12, 10, 16, 8),
                                                 decoration: BoxDecoration(
                                                     color: messageList[index].senderId == widget.currentUser.id
                                                         ? CustomColor.userColor
@@ -353,16 +394,21 @@ class _ChatScreenState extends State<ChatScreen> {
                                                           .bodySmall!
                                                           .copyWith(fontStyle: FontStyle.italic),
                                                     ),
-                                                    Icon(Icons.check,
-                                                        color: messageList[index].seen == true ? Colors.blue : Colors.grey,
-                                                        size: 17)
+                                                    messageList[index].senderId == widget.currentUser.id
+                                                        ? (Icon(Icons.check,
+                                                            color: messageList[index].seen == true ? Colors.blue : Colors.grey,
+                                                            size: 17))
+                                                        : const SizedBox(
+                                                            width: 2,
+                                                          )
                                                   ],
                                                 )),
                                           )
                                         ]),
                                   );
                                 }
-                                // ****************** SHOW IMAGES IN CHAT *********************
+
+                                /// ****************** SHOW IMAGES IN CHAT *********************
                                 else if (messageList[index].msgType == "img") {
                                   return Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -392,8 +438,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.end,
                                           children: [
                                             LimitedBox(
-                                              maxWidth: MediaQuery.of(context).size.width / 2,
-                                              maxHeight: MediaQuery.of(context).size.height / 3,
+                                              maxWidth: MediaQuery.of(context).size.width / 1.5,
+                                              maxHeight: MediaQuery.of(context).size.height / 2.5,
                                               child: GestureDetector(
                                                 onTap: () {
                                                   Navigator.push(
@@ -443,8 +489,13 @@ class _ChatScreenState extends State<ChatScreen> {
                                                       .bodySmall!
                                                       .copyWith(fontStyle: FontStyle.italic),
                                                 ),
-                                                Icon(Icons.check,
-                                                    color: messageList[index].seen == true ? Colors.blue : Colors.grey, size: 17),
+                                                messageList[index].senderId == widget.currentUser.id
+                                                    ? (Icon(Icons.check,
+                                                        color: messageList[index].seen == true ? Colors.blue : Colors.grey,
+                                                        size: 17))
+                                                    : const SizedBox(
+                                                        width: 4,
+                                                      )
                                               ],
                                             )
                                           ],
@@ -452,8 +503,124 @@ class _ChatScreenState extends State<ChatScreen> {
                                       ),
                                     ],
                                   );
+
+                                  /// ****************** SHOW VIDEOS IN CHAT *********************
+                                } else if (messageList[index].msgType == "video") {
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                        ? MainAxisAlignment.end
+                                        : MainAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.symmetric(vertical: 3),
+                                        padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
+                                        decoration: BoxDecoration(
+                                            color: messageList[index].senderId == widget.currentUser.id
+                                                ? const Color(0xFFb3f2c7)
+                                                : const Color(0xFFa8e5f0),
+                                            borderRadius: messageList[index].senderId == widget.currentUser.id
+                                                ? const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.zero,
+                                                    topLeft: Radius.circular(15),
+                                                    bottomLeft: Radius.circular(15))
+                                                : const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.circular(15),
+                                                    topLeft: Radius.zero,
+                                                    bottomLeft: Radius.circular(15))),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            LimitedBox(
+                                              maxWidth: MediaQuery.of(context).size.width / 1.5,
+                                              maxHeight: MediaQuery.of(context).size.height / 2.5,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            PlayVideo(videoUrl: messageList[index].msg.toString()),
+                                                      ));
+                                                },
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  child: CachedNetworkImage(
+                                                      imageUrl: messageList[index].thumbnail.toString(),
+                                                      fit: BoxFit.fill,
+                                                      placeholder: (context, url) => Container(
+                                                            color: Colors.grey,
+                                                            child: const Center(child: CircularProgressIndicator()),
+                                                          ),
+                                                      errorWidget: (context, url, error) {
+                                                        if (url == "dummy data") {
+                                                          return Container(
+                                                            color: Colors.grey,
+                                                            child: const Center(child: CircularProgressIndicator()),
+                                                          );
+                                                        } else {
+                                                          return Text(
+                                                            " ** An error Occurred while Loading Video **",
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .bodySmall!
+                                                                .copyWith(fontStyle: FontStyle.italic),
+                                                          );
+                                                        }
+                                                      }),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 2,
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall!
+                                                      .copyWith(fontStyle: FontStyle.italic),
+                                                ),
+                                                messageList[index].senderId == widget.currentUser.id
+                                                    ? (Icon(Icons.check,
+                                                        color: messageList[index].seen == true ? Colors.blue : Colors.grey,
+                                                        size: 17))
+                                                    : const SizedBox(
+                                                        width: 4,
+                                                      )
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  );
+
+                                  /// ****************** SHOW PDF IN CHAT *********************
+                                } else if (messageList[index].msgType == "pdf") {
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                        ? MainAxisAlignment.end
+                                        : MainAxisAlignment.start,
+                                    children: const [
+                                      Text("pdf Data"),
+                                    ],
+                                  );
                                 } else {
-                                  return Container();
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                        ? MainAxisAlignment.end
+                                        : MainAxisAlignment.start,
+                                    children: const [
+                                      Text("Random Data"),
+                                    ],
+                                  );
                                 }
                               },
                             ),
@@ -468,7 +635,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                 ),
               ),
-              //****************   BOTTOM TEXT FIELD, SEND IMAGES   ************************
+
+              ///****************   BOTTOM TEXT FIELD, SEND IMAGES   ************************
               Container(
                 // height: 60,
                 margin: const EdgeInsets.all(5),
@@ -499,7 +667,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         textCapitalization: TextCapitalization.sentences,
                         maxLines: null,
                         keyboardType: TextInputType.multiline,
-                        decoration:  InputDecoration(
+                        decoration: InputDecoration(
                             focusedBorder: const OutlineInputBorder(
                                 borderRadius: BorderRadius.all(Radius.circular(15)),
                                 borderSide: BorderSide(color: Colors.transparent)),
@@ -520,37 +688,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         radius: 25,
                         child: IconButton(
                             onPressed: () {
-                              if (msgController.text.isNotEmpty) {
-                                String currentMsg = msgController.text;
-                                msgController.clear();
-                                msgDetails = MessageModel(
-                                    msg: currentMsg,
-                                    msgId: uuid.v1(),
-                                    senderId: widget.currentUser.id,
-                                    createdOn: Timestamp.now(),
-                                    seen: false,
-                                    msgType: "text");
-                                if (msgDetails != null) {
-                                  FirebaseFirestore.instance
-                                      .collection("chatRooms")
-                                      .doc(widget.chatRoom.chatRoomId.toString())
-                                      .collection("messages")
-                                      .doc(msgDetails!.msgId.toString())
-                                      .set(msgDetails!.toMap())
-                                      .then((value) async {
-                                    var updateData = {
-                                      "lastMsg": currentMsg,
-                                      "lastMsgTime": msgDetails!.createdOn,
-                                      "unreadMsg.${widget.searchedUser!.id.toString()}": await messageIncrement()
-                                    };
-
-                                    await FirebaseFirestore.instance
-                                        .collection("chatRooms")
-                                        .doc(widget.chatRoom.chatRoomId.toString())
-                                        .update(updateData);
-                                  });
-                                }
-                              }
+                              sendMessage();
                             },
                             icon: const Icon(
                               Icons.send_sharp,
@@ -576,6 +714,37 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     return data;
   }
+
+  sendMessage() {
+    if (msgController.text.isNotEmpty) {
+      String currentMsg = msgController.text;
+      msgController.clear();
+      msgDetails = MessageModel(
+          msg: currentMsg,
+          msgId: uuid.v1(),
+          senderId: widget.currentUser.id,
+          createdOn: Timestamp.now(),
+          seen: false,
+          msgType: "text");
+      if (msgDetails != null) {
+        FirebaseFirestore.instance
+            .collection("chatRooms")
+            .doc(widget.chatRoom.chatRoomId.toString())
+            .collection("messages")
+            .doc(msgDetails!.msgId.toString())
+            .set(msgDetails!.toMap())
+            .then((value) async {
+          var updateData = {
+            "lastMsg": currentMsg,
+            "lastMsgTime": msgDetails!.createdOn,
+            "unreadMsg.${widget.searchedUser!.id.toString()}": await messageIncrement()
+          };
+
+          await FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId.toString()).update(updateData);
+        });
+      }
+    }
+  }
 }
 
 class ShowImage extends StatelessWidget {
@@ -595,7 +764,58 @@ class ShowImage extends StatelessWidget {
                   maxScale: double.infinity,
                   clipBehavior: Clip.none,
                   boundaryMargin: const EdgeInsets.all(0),
-                  child: Image.network(imgUrl)))),
+                  child: CachedNetworkImage(imageUrl: imgUrl,placeholder: (context, url) {
+                    return const Center(child: LinearProgressIndicator(),);
+                  },)))),
+    );
+  }
+}
+
+class PlayVideo extends StatefulWidget {
+  const PlayVideo({Key? key, required this.videoUrl}) : super(key: key);
+  final String videoUrl;
+
+  @override
+  State<PlayVideo> createState() => _PlayVideoState();
+}
+
+class _PlayVideoState extends State<PlayVideo> {
+  late VideoPlayerController _controller;
+
+  @override
+  void initState() {
+    print("in init");
+    _controller = VideoPlayerController.network(widget.videoUrl)
+      ..initialize().then((value) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+          child: _controller.value.isInitialized
+              ? AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: VideoPlayer(_controller),
+                )
+              : const Text("Loading...")),
+      floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _controller.value.isPlaying ? _controller.pause() : _controller.play();
+            setState(() {});
+          },
+          child: Icon(_controller.value.isPlaying ? Icons.pause : Icons.play_arrow)),
     );
   }
 }
