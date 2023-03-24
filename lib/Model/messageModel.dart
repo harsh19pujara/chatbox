@@ -8,8 +8,9 @@ class MessageModel{
   bool? seen;
   String? msgType;
   String? thumbnail;
+  String? repliedTo;
 
-  MessageModel({required this.msgType, required this.msg, required this.msgId, required this.senderId, required this.createdOn, required this.seen, this.thumbnail});
+  MessageModel({required this.msgType, required this.msg, required this.msgId, required this.senderId, required this.createdOn, required this.seen, this.thumbnail, this.repliedTo});
 
   MessageModel.fromJson(Map<String, dynamic> data){
     msgId = data["msgId"];
@@ -19,6 +20,7 @@ class MessageModel{
     seen = data["seen"];
     msgType = data["msgType"];
     thumbnail = data["thumbnail"];
+    repliedTo = data["repliedTo"];
   }
 
   Map<String, dynamic> toMap() => {
@@ -28,6 +30,7 @@ class MessageModel{
     "createdOn" : createdOn,
     "seen" : seen,
     "msgType" : msgType,
-    "thumbnail" : thumbnail
+    "thumbnail" : thumbnail,
+    "repliedTo" : repliedTo
   };
 }
