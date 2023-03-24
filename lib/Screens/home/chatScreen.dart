@@ -334,7 +334,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 if (messageList[index].msgType == "text") {
                                   return Dismissible(
                                     key: UniqueKey(),
-                                    dismissThresholds: messageList[index].senderId == widget.currentUser.id ? const {DismissDirection.endToStart : 0.5}:const {DismissDirection.startToEnd: 0.5},
+                                    dismissThresholds: messageList[index].senderId == widget.currentUser.id
+                                        ? const {DismissDirection.endToStart: 0.5}
+                                        : const {DismissDirection.startToEnd: 0.5},
                                     onUpdate: (details) {
                                       if (details.reached) {
                                         setState(() {
@@ -352,7 +354,6 @@ class _ChatScreenState extends State<ChatScreen> {
                                               : MainAxisAlignment.start,
                                           children: [
                                             Container(
-
                                                 margin: const EdgeInsets.symmetric(vertical: 1.5),
                                                 padding: const EdgeInsets.fromLTRB(12, 10, 16, 8),
                                                 decoration: BoxDecoration(
@@ -372,13 +373,12 @@ class _ChatScreenState extends State<ChatScreen> {
                                                             bottomLeft: Radius.circular(15))),
                                                 child: Column(
                                                   mainAxisSize: MainAxisSize.min,
-                                                  crossAxisAlignment:CrossAxisAlignment.start,
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
                                                   children: [
                                                     messageList[index].repliedTo != '' && messageList[index].repliedTo != null
-                                                        ? Container(
-                                                            constraints: const BoxConstraints( maxWidth: 280,
-                                                              maxHeight: 100,
-                                                            minWidth: 80),
+                                                        ? Container(  /// SHOW REPLIED MESSAGE TEXT
+                                                            constraints:
+                                                                const BoxConstraints(maxWidth: 280, maxHeight: 100, minWidth: 80),
                                                             padding: const EdgeInsets.only(left: 5, right: 5, top: 3, bottom: 3),
                                                             margin: const EdgeInsets.only(bottom: 5),
                                                             decoration: BoxDecoration(
@@ -386,7 +386,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                                               color: const Color(0xFFeaf7e4),
                                                               border: Border.all(width: 0.1),
                                                             ),
-                                                            child: Text(messageList[index].repliedTo!,overflow: TextOverflow.fade,),
+                                                            child: Text(
+                                                              messageList[index].repliedTo!,
+                                                              overflow: TextOverflow.fade,
+                                                            ),
                                                           )
                                                         : Container(),
                                                     Row(
@@ -446,7 +449,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 else if (messageList[index].msgType == "img") {
                                   return Dismissible(
                                     key: UniqueKey(),
-                                    dismissThresholds: messageList[index].senderId == widget.currentUser.id ? const {DismissDirection.endToStart : 0.5}:const {DismissDirection.startToEnd: 0.5},
+                                    dismissThresholds: messageList[index].senderId == widget.currentUser.id
+                                        ? const {DismissDirection.endToStart: 0.5}
+                                        : const {DismissDirection.startToEnd: 0.5},
                                     onUpdate: (details) {
                                       if (details.reached) {
                                         setState(() {
@@ -554,7 +559,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 } else if (messageList[index].msgType == "video") {
                                   return Dismissible(
                                     key: UniqueKey(),
-                                    dismissThresholds: messageList[index].senderId == widget.currentUser.id ? const {DismissDirection.endToStart : 0.5}:const {DismissDirection.startToEnd: 0.5},
+                                    dismissThresholds: messageList[index].senderId == widget.currentUser.id
+                                        ? const {DismissDirection.endToStart: 0.5}
+                                        : const {DismissDirection.startToEnd: 0.5},
                                     onUpdate: (details) {
                                       if (details.reached) {
                                         setState(() {
@@ -829,17 +836,13 @@ class _ChatScreenState extends State<ChatScreen> {
             .doc(msgDetails!.msgId.toString())
             .set(msgDetails!.toMap())
             .then((value) async {
-
           var updateData = {
             "lastMsg": currentMsg,
             "lastMsgTime": msgDetails!.createdOn,
             "unreadMsg.${widget.searchedUser!.id.toString()}": await messageIncrement()
           };
 
-          await FirebaseFirestore.instance
-              .collection("chatRooms")
-              .doc(widget.chatRoom.chatRoomId.toString())
-              .update(updateData);
+          await FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId.toString()).update(updateData);
         });
       }
     }
@@ -885,14 +888,24 @@ class PlayVideo extends StatefulWidget {
 
 class _PlayVideoState extends State<PlayVideo> {
   late VideoPlayerController _controller;
+  String position = '';
+  String duration = '';
+  double currentVolume = 0.5;
 
   @override
   void initState() {
     print("in init");
     _controller = VideoPlayerController.network(widget.videoUrl)
+      ..addListener(() {
+      setState(() {
+        position = _controller.value.position.toString().trim().split('.').first;
+      });
+    })
       ..initialize().then((value) {
         if (mounted) {
-          setState(() {});
+          setState(() {
+            duration = _controller.value.duration.toString().split('.').first;
+          });
         }
       });
     super.initState();
@@ -907,19 +920,54 @@ class _PlayVideoState extends State<PlayVideo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-          child: _controller.value.isInitialized
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _controller.value.isInitialized
               ? AspectRatio(
                   aspectRatio: _controller.value.aspectRatio,
-                  child: VideoPlayer(_controller),
+                  child: VideoPlayer(
+                    _controller,
+                  ),
                 )
-              : const Text("Loading...")),
-      floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            _controller.value.isPlaying ? _controller.pause() : _controller.play();
-            setState(() {});
-          },
-          child: Icon(_controller.value.isPlaying ? Icons.pause : Icons.play_arrow)),
+              : const Center(child: Text("Loading...")),
+          // SizedBox(height: 10,),
+          if(_controller.value.isInitialized)...[
+              VideoProgressIndicator(
+                  _controller,
+                  allowScrubbing: true,
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                ),
+          Row(
+            children: [
+              IconButton(
+                  onPressed: () {
+                    _controller.value.isPlaying ? _controller.pause() : _controller.play();
+                    setState(() {});
+                  },
+                  icon: Icon(_controller.value.isPlaying ? Icons.pause : Icons.play_arrow,)),
+              Text("$position/$duration",style: TextStyle(fontSize: 14),),
+              SizedBox(width: 32,),
+              customVolumeIcon(),
+              SizedBox(
+                width: 160,
+                child: Slider(value: currentVolume, onChanged: (value) {
+                  setState(() {
+                    currentVolume = value;
+                    _controller.setVolume(value);
+
+                  });
+                },max: 1,min: 0,),
+              ),
+
+            ],
+          )]
+        ],
+      ),
     );
+  }
+
+  Widget customVolumeIcon(){
+    return Icon(Icons.volume_up_sharp, size: 20,);
   }
 }
