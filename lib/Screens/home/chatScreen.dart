@@ -85,6 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
         senderId: widget.currentUser.id,
         createdOn: Timestamp.now(),
         seen: false,
+        thumbnail: "dummy data"
       );
 
       await FirebaseFirestore.instance
@@ -349,6 +350,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       // color: Colors.blueGrey,
                                       width: MediaQuery.of(context).size.width - 100,
                                       child: Row(
+                                        mainAxisSize: MainAxisSize.min,
                                           mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
                                               ? MainAxisAlignment.end
                                               : MainAxisAlignment.start,
@@ -373,12 +375,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                                             bottomLeft: Radius.circular(15))),
                                                 child: Column(
                                                   mainAxisSize: MainAxisSize.min,
-                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  crossAxisAlignment: messageList[index].senderId.toString() == widget.currentUser.id.toString()
+                                                      ? CrossAxisAlignment.end
+                                                      : CrossAxisAlignment.start,
                                                   children: [
                                                     messageList[index].repliedTo != '' && messageList[index].repliedTo != null
-                                                        ? Container(  /// SHOW REPLIED MESSAGE TEXT
+                                                        ? Container(
+                                                            /// SHOW REPLIED MESSAGE TEXT
                                                             constraints:
-                                                                const BoxConstraints(maxWidth: 280, maxHeight: 100, minWidth: 80),
+                                                                const BoxConstraints(maxWidth: 295, maxHeight: 100, minWidth: 85),
                                                             padding: const EdgeInsets.only(left: 5, right: 5, top: 3, bottom: 3),
                                                             margin: const EdgeInsets.only(bottom: 5),
                                                             decoration: BoxDecoration(
@@ -704,38 +709,42 @@ class _ChatScreenState extends State<ChatScreen> {
               ///****************   BOTTOM TEXT FIELD, SEND FILES   ************************
               Container(
                 // height: 60,
-                margin: const EdgeInsets.only(top: 0, bottom: 2, left: 3, right: 3),
+                margin: const EdgeInsets.only(top: 3, bottom: 2, left: 3, right: 3),
                 // color: Colors.red,
                 // padding: EdgeInsets.symmetric(vertical: 5,horizontal: 10),
-                decoration: BoxDecoration(
-                    color: doReply ? CustomColor.userColor : null, borderRadius: const BorderRadius.all(Radius.circular(15))),
+
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          openImagePicker();
-                        },
-                        style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.all(2),
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            minimumSize: const Size(40, 50)),
-                        child: SizedBox(
-                            child: Image.asset(
-                          "assets/images/Clip.png",
-                          width: 22,
-                        ))),
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+                      padding: const EdgeInsets.only(top: 4, bottom: 4, right: 5),
+                      decoration: BoxDecoration(
+                          color: doReply ? Colors.blueGrey[300] : null,
+                          borderRadius: const BorderRadius.all(Radius.circular(15))),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                          doReply ? Align(
+                              alignment: Alignment.topRight,
+                              child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      replyMsg = "";
+                                      doReply = false;
+                                    });
+                                  },
+                                  child: const Icon(
+                                    Icons.cancel_outlined,
+                                    color: Colors.white,
+                                    size: 15,
+                                  ))) : Container(),
                           doReply
                               ? Container(
-                                  height: 60,
-                                  width: 236,
-                                  padding: const EdgeInsets.only(left: 5, right: 5, top: 3, bottom: 3),
+                                  constraints: const BoxConstraints(maxHeight: 70, minHeight: 30),
+                                  // height: 70,
+                                  width: 280,
+                                  padding: const EdgeInsets.only(left: 10, right: 0, top: 5, bottom: 3),
                                   margin: const EdgeInsets.only(bottom: 5),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(15),
@@ -745,37 +754,57 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: Text(replyMsg, style: const TextStyle(), overflow: TextOverflow.fade),
                                 )
                               : Container(),
-                          Flexible(
-                              child: LimitedBox(
-                            maxHeight: 70,
-                            child: SizedBox(
-                              width: 236,
-                              child: TextField(
-                                style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
-                                controller: msgController,
-                                textCapitalization: TextCapitalization.sentences,
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                decoration: InputDecoration(
-                                    focusedBorder: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(Radius.circular(15)),
-                                        borderSide: BorderSide(color: Colors.transparent)),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                    filled: true,
-                                    fillColor: Colors.black12,
-                                    hintText: "Enter Text...",
-                                    hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.blueGrey),
-                                    enabledBorder: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(Radius.circular(10)),
-                                        borderSide: BorderSide(color: Colors.transparent))),
+                          Row(
+                            children: [
+                              ElevatedButton(
+                                  onPressed: () {
+                                    openImagePicker();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.all(2),
+                                      backgroundColor: Colors.transparent,
+                                      elevation: 0,
+                                      minimumSize: const Size(40, 50)),
+                                  child: SizedBox(
+                                      child: Image.asset(
+                                    "assets/images/Clip.png",
+                                    width: 22,
+                                  ))),
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+                                child: LimitedBox(
+                                  maxHeight: 70,
+                                  child: SizedBox(
+                                    width: 236,
+                                    child: TextField(
+                                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
+                                      controller: msgController,
+                                      textCapitalization: TextCapitalization.sentences,
+                                      maxLines: null,
+                                      keyboardType: TextInputType.multiline,
+                                      decoration: InputDecoration(
+                                          focusedBorder: const OutlineInputBorder(
+                                              borderRadius: BorderRadius.all(Radius.circular(15)),
+                                              borderSide: BorderSide(color: Colors.transparent)),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                          filled: true,
+                                          fillColor: Colors.black12,
+                                          hintText: "Enter Text...",
+                                          hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.blueGrey),
+                                          enabledBorder: const OutlineInputBorder(
+                                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                                              borderSide: BorderSide(color: Colors.transparent))),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          )),
+                            ],
+                          ),
                         ],
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(left: 3),
+                      padding: const EdgeInsets.only(left: 3, bottom: 6),
                       child: CircleAvatar(
                         backgroundColor: const Color(0xFF20A090),
                         radius: 25,
@@ -897,10 +926,10 @@ class _PlayVideoState extends State<PlayVideo> {
     print("in init");
     _controller = VideoPlayerController.network(widget.videoUrl)
       ..addListener(() {
-      setState(() {
-        position = _controller.value.position.toString().trim().split('.').first;
-      });
-    })
+        setState(() {
+          position = _controller.value.position.toString().trim().split('.').first;
+        });
+      })
       ..initialize().then((value) {
         if (mounted) {
           setState(() {
@@ -932,42 +961,56 @@ class _PlayVideoState extends State<PlayVideo> {
                 )
               : const Center(child: Text("Loading...")),
           // SizedBox(height: 10,),
-          if(_controller.value.isInitialized)...[
-              VideoProgressIndicator(
-                  _controller,
-                  allowScrubbing: true,
-                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          if (_controller.value.isInitialized) ...[
+            VideoProgressIndicator(
+              _controller,
+              allowScrubbing: true,
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+            ),
+            Row(
+              children: [
+                IconButton(
+                    onPressed: () {
+                      _controller.value.isPlaying ? _controller.pause() : _controller.play();
+                      setState(() {});
+                    },
+                    icon: Icon(
+                      _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                    )),
+                Text(
+                  "$position/$duration",
+                  style: const TextStyle(fontSize: 14),
                 ),
-          Row(
-            children: [
-              IconButton(
-                  onPressed: () {
-                    _controller.value.isPlaying ? _controller.pause() : _controller.play();
-                    setState(() {});
-                  },
-                  icon: Icon(_controller.value.isPlaying ? Icons.pause : Icons.play_arrow,)),
-              Text("$position/$duration",style: TextStyle(fontSize: 14),),
-              SizedBox(width: 32,),
-              customVolumeIcon(),
-              SizedBox(
-                width: 160,
-                child: Slider(value: currentVolume, onChanged: (value) {
-                  setState(() {
-                    currentVolume = value;
-                    _controller.setVolume(value);
-
-                  });
-                },max: 1,min: 0,),
-              ),
-
-            ],
-          )]
+                const SizedBox(
+                  width: 32,
+                ),
+                customVolumeIcon(),
+                SizedBox(
+                  width: 160,
+                  child: Slider(
+                    value: currentVolume,
+                    onChanged: (value) {
+                      setState(() {
+                        currentVolume = value;
+                        _controller.setVolume(value);
+                      });
+                    },
+                    max: 1,
+                    min: 0,
+                  ),
+                ),
+              ],
+            )
+          ]
         ],
       ),
     );
   }
 
-  Widget customVolumeIcon(){
-    return Icon(Icons.volume_up_sharp, size: 20,);
+  Widget customVolumeIcon() {
+    return const Icon(
+      Icons.volume_up_sharp,
+      size: 20,
+    );
   }
 }
