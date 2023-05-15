@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:chatting_app/Helper/privacy.dart';
 import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Model/chatModel.dart';
 import 'package:chatting_app/Model/messageModel.dart';
 import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/home/profileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:encrypt/encrypt.dart' as enc;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -34,6 +36,7 @@ class _ChatScreenState extends State<ChatScreen> {
   File? thumbFile;
   bool doReply = false;
   String replyMsg = '';
+  enc.Encrypted? encryptedMsg;
 
   @override
   void initState() {
@@ -79,14 +82,13 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       var data = MessageModel(
-        msgType: msgType,
-        msg: "dummy data",
-        msgId: uuid.v1(),
-        senderId: widget.currentUser.id,
-        createdOn: Timestamp.now(),
-        seen: false,
-        thumbnail: "dummy data"
-      );
+          msgType: msgType,
+          msg: "dummy data",
+          msgId: uuid.v1(),
+          senderId: widget.currentUser.id,
+          createdOn: Timestamp.now(),
+          seen: false,
+          thumbnail: "dummy data");
 
       await FirebaseFirestore.instance
           .collection("chatRooms")
@@ -333,6 +335,17 @@ class _ChatScreenState extends State<ChatScreen> {
 
                                 ///*************************   SHOW TEXT IN CHAT   *******************************
                                 if (messageList[index].msgType == "text") {
+                                  String theMsg = "";
+                                  String theRepliedMsg = "";
+                                  if (messageList[index].isEncrypted != null) {
+                                    theMsg = MessagePrivacy.decryption(messageList[index].msg.toString());
+                                    theRepliedMsg = messageList[index].repliedTo.toString() != ""
+                                        ? MessagePrivacy.decryption(messageList[index].repliedTo.toString())
+                                        : messageList[index].repliedTo.toString();
+                                  } else {
+                                    theMsg = messageList[index].msg.toString();
+                                    theRepliedMsg = messageList[index].repliedTo.toString();
+                                  }
                                   return Dismissible(
                                     key: UniqueKey(),
                                     dismissThresholds: messageList[index].senderId == widget.currentUser.id
@@ -342,7 +355,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       if (details.reached) {
                                         setState(() {
                                           doReply = true;
-                                          replyMsg = messageList[index].msg.toString();
+                                          replyMsg = theMsg;
                                         });
                                       }
                                     },
@@ -350,7 +363,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       // color: Colors.blueGrey,
                                       width: MediaQuery.of(context).size.width - 100,
                                       child: Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                          mainAxisSize: MainAxisSize.min,
                                           mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
                                               ? MainAxisAlignment.end
                                               : MainAxisAlignment.start,
@@ -375,11 +388,12 @@ class _ChatScreenState extends State<ChatScreen> {
                                                             bottomLeft: Radius.circular(15))),
                                                 child: Column(
                                                   mainAxisSize: MainAxisSize.min,
-                                                  crossAxisAlignment: messageList[index].senderId.toString() == widget.currentUser.id.toString()
-                                                      ? CrossAxisAlignment.end
-                                                      : CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      messageList[index].senderId.toString() == widget.currentUser.id.toString()
+                                                          ? CrossAxisAlignment.end
+                                                          : CrossAxisAlignment.start,
                                                   children: [
-                                                    messageList[index].repliedTo != '' && messageList[index].repliedTo != null
+                                                    theRepliedMsg != ''
                                                         ? Container(
                                                             /// SHOW REPLIED MESSAGE TEXT
                                                             constraints:
@@ -392,7 +406,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                                               border: Border.all(width: 0.1),
                                                             ),
                                                             child: Text(
-                                                              messageList[index].repliedTo!,
+                                                              theRepliedMsg,
                                                               overflow: TextOverflow.fade,
                                                             ),
                                                           )
@@ -414,7 +428,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                                                 ScaffoldMessenger.of(context).showSnackBar(snackBar);
                                                               }
                                                             },
-                                                            text: messageList[index].msg.toString(),
+                                                            text: theMsg,
                                                             style: Theme.of(context).textTheme.bodyMedium,
                                                             softWrap: true,
                                                             maxLines: null,
@@ -725,20 +739,22 @@ class _ChatScreenState extends State<ChatScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          doReply ? Align(
-                              alignment: Alignment.topRight,
-                              child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      replyMsg = "";
-                                      doReply = false;
-                                    });
-                                  },
-                                  child: const Icon(
-                                    Icons.cancel_outlined,
-                                    color: Colors.white,
-                                    size: 15,
-                                  ))) : Container(),
+                          doReply
+                              ? Align(
+                                  alignment: Alignment.topRight,
+                                  child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          replyMsg = "";
+                                          doReply = false;
+                                        });
+                                      },
+                                      child: const Icon(
+                                        Icons.cancel_outlined,
+                                        color: Colors.white,
+                                        size: 15,
+                                      )))
+                              : Container(),
                           doReply
                               ? Container(
                                   constraints: const BoxConstraints(maxHeight: 70, minHeight: 30),
@@ -841,7 +857,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   sendMessage() {
     if (msgController.text.isNotEmpty) {
-      String currentMsg = msgController.text;
+      String currentMsg = MessagePrivacy.encryption(msgController.text.trim());
       msgController.clear();
       msgDetails = MessageModel(
           msg: currentMsg,
@@ -850,7 +866,8 @@ class _ChatScreenState extends State<ChatScreen> {
           createdOn: Timestamp.now(),
           seen: false,
           msgType: "text",
-          repliedTo: replyMsg);
+          isEncrypted: true,
+          repliedTo: replyMsg != "" ? MessagePrivacy.encryption(replyMsg) : replyMsg);
 
       setState(() {
         replyMsg = '';

@@ -9,8 +9,9 @@ class MessageModel{
   String? msgType;
   String? thumbnail;
   String? repliedTo;
+  bool? isEncrypted;
 
-  MessageModel({required this.msgType, required this.msg, required this.msgId, required this.senderId, required this.createdOn, required this.seen, this.thumbnail, this.repliedTo});
+  MessageModel({required this.msgType, required this.msg, required this.msgId, required this.senderId, required this.createdOn, required this.seen, this.thumbnail, this.repliedTo, this.isEncrypted});
 
   MessageModel.fromJson(Map<String, dynamic> data){
     msgId = data["msgId"];
@@ -21,6 +22,7 @@ class MessageModel{
     msgType = data["msgType"];
     thumbnail = data["thumbnail"];
     repliedTo = data["repliedTo"];
+    isEncrypted = data["isEncrypted"];
   }
 
   Map<String, dynamic> toMap() => {
@@ -31,6 +33,7 @@ class MessageModel{
     "seen" : seen,
     "msgType" : msgType,
     "thumbnail" : thumbnail,
-    "repliedTo" : repliedTo
+    "repliedTo" : repliedTo,
+    "isEncrypted" : isEncrypted
   };
 }

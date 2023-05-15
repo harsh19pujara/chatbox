@@ -212,153 +212,107 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
         otherUser = element;
       }
     }
-    return Dismissible(
-      key: UniqueKey(),
-      secondaryBackground: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-              onPressed: () {
-                print("info");
-                stopSlide = false;
-                setState(() {
+    return StreamBuilder(
+      /// Stream builder for continuous online offline status of user
+      stream: FirebaseFirestore.instance.collection("users").doc(otherUser).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.data != null) {
+          UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
+          String lastMsgTime = showTime(data.lastMsgTime!.toDate());
 
-                });
-              },
-              icon: Icon(Icons.info)),
-          IconButton(
-              onPressed: () {
-                print("delete");
-                stopSlide = false;
-                setState(() {
-
-                });
-              },
-              icon: Icon(Icons.delete))
-        ],
-      ),
-      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
-      background: Container(
-        width: 50,
-        child: Text("hello"),
-      ),
-      movementDuration: Duration(minutes: 5),
-      direction: stopSlide ? DismissDirection.none : DismissDirection.horizontal,
-      onUpdate:
-          (details) {
-
-        if (details.reached == true) {
-          stopSlide = true;
-
-        }
-      },
-      resizeDuration: null,
-      confirmDismiss: (direction) {
-        return holdDismiss();
-      },
-      child: StreamBuilder(
-        // Stream builder for continuous online offline status of user
-        stream: FirebaseFirestore.instance.collection("users").doc(otherUser).snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.data != null) {
-            UserModel searchedUser = UserModel.fromJson(snapshot.data!.data() as Map<String, dynamic>);
-            String lastMsgTime = showTime(data.lastMsgTime!.toDate());
-
-            return InkWell(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(chatRoom: data, currentUser: widget.userData, searchedUser: searchedUser),
-                    ));
-              },
+          return InkWell(
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(chatRoom: data, currentUser: widget.userData, searchedUser: searchedUser),
+                  ));
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              height: 70,
               child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                height: 70,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  child: Row(
-                    children: [
-                      Stack(children: [
-                        CircleAvatar(
-                          backgroundColor: CustomColor.friendColor,
-                          backgroundImage: searchedUser.profile != "" && searchedUser.profile != null
-                              ? NetworkImage(searchedUser.profile.toString())
-                              : null,
-                          radius: 26,
-                          child: searchedUser.profile != "" && searchedUser.profile != null
-                              ? null
-                              : const Icon(Icons.person, color: Colors.white),
-                        ),
-                        Positioned(
-                          bottom: 3,
-                          right: 3,
-                          child: Container(
-                            height: 10,
-                            width: 10,
-                            // alignment: AlignmentDirectional.bottomEnd,
-                            decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: searchedUser.isOnline != null
-                                    ? (searchedUser.isOnline! ? CustomColor.online : CustomColor.offline)
-                                    : CustomColor.unreadMsg),
-                          ),
-                        )
-                      ]),
-                      const SizedBox(
-                        width: 10,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                child: Row(
+                  children: [
+                    Stack(children: [
+                      CircleAvatar(
+                        backgroundColor: CustomColor.friendColor,
+                        backgroundImage: searchedUser.profile != "" && searchedUser.profile != null
+                            ? NetworkImage(searchedUser.profile.toString())
+                            : null,
+                        radius: 26,
+                        child: searchedUser.profile != "" && searchedUser.profile != null
+                            ? null
+                            : const Icon(Icons.person, color: Colors.white),
                       ),
-                      SizedBox(
-                        width: 150,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              searchedUser.name.toString(),
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            Text(
-                              data.lastMsg.toString().replaceAll('\n', ' '),
-                              style: Theme.of(context).textTheme.bodySmall,
-                              overflow: TextOverflow.ellipsis,
-                            )
-                          ],
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 25,
-                      ),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              lastMsgTime,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            data.unreadMsg![widget.userData.id.toString()] == 0
-                                ? Container()
-                                : CircleAvatar(
-                                    radius: 12,
-                                    backgroundColor: CustomColor.unreadMsg,
-                                    child: Text(data.unreadMsg![widget.userData.id.toString()].toString()),
-                                  )
-                          ],
+                      Positioned(
+                        bottom: 3,
+                        right: 3,
+                        child: Container(
+                          height: 10,
+                          width: 10,
+                          // alignment: AlignmentDirectional.bottomEnd,
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: searchedUser.isOnline != null
+                                  ? (searchedUser.isOnline! ? CustomColor.online : CustomColor.offline)
+                                  : CustomColor.unreadMsg),
                         ),
                       )
-                    ],
-                  ),
+                    ]),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    SizedBox(
+                      width: 150,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            searchedUser.name.toString(),
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          Text(
+                            data.lastMsg.toString().replaceAll('\n', ' '),
+                            style: Theme.of(context).textTheme.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        ],
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 25,
+                    ),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            lastMsgTime,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          data.unreadMsg![widget.userData.id.toString()] == 0
+                              ? Container()
+                              : CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: CustomColor.unreadMsg,
+                                  child: Text(data.unreadMsg![widget.userData.id.toString()].toString()),
+                                )
+                        ],
+                      ),
+                    )
+                  ],
                 ),
               ),
-            );
-          } else {
-            return Container();
-          }
-        },
-      ),
+            ),
+          );
+        } else {
+          return Container();
+        }
+      },
     );
   }
 

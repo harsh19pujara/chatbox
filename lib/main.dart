@@ -7,19 +7,22 @@ import 'package:chatting_app/Screens/welcomeScreen.dart';
 import 'package:chatting_app/Screens/splashScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp( MaterialApp(
+  String? token = await FirebaseMessaging.instance.getToken();
+  print("token  " + token.toString());
+  runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: CustomTheme.lightTheme(),
     home: const MyApp(),
   ));
 }
-
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -35,6 +38,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
+    // registerNotification();
     Timer(
       const Duration(seconds: 1),
       () {
@@ -42,7 +46,6 @@ class _MyAppState extends State<MyApp> {
       },
     );
     super.initState();
-
   }
 
   checkIfLogin() async {
@@ -69,4 +72,28 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return const SplashScreen();
   }
+
+  // void registerNotification() async {
+  //   FirebaseMessaging messaging = FirebaseMessaging.instance;
+  //   FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
+  //   localNotifications.resolvePlatformSpecificImplementation();
+  //   await localNotifications.initialize(const InitializationSettings(android: AndroidInitializationSettings("splash_logo")),onDidReceiveBackgroundNotificationResponse: (details) {
+  //     // localNotifications.show(123, "title", "new message",
+  //     //     NotificationDetails(android: AndroidNotificationDetails("123", "local", color: Colors.greenAccent)));
+  //   },);
+  //   localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()!.requestPermission();
+  //
+  //   NotificationSettings setting = await messaging.requestPermission(alert: true, sound: true, badge: true,announcement: true);
+  //   if (setting.authorizationStatus == AuthorizationStatus.authorized) {
+  //     print("granted");
+  //     FirebaseMessaging.onMessage.listen((message) {
+  //       print(message.data);
+  //       localNotifications.show(123, "title", "new message",
+  //           NotificationDetails(android: AndroidNotificationDetails("123", "local", color: Colors.greenAccent,importance: Importance.max,)));
+  //       // localNotifications.zonedSchedule(1, "title", "body", , const NotificationDetails(android: AndroidNotificationDetails("123", "local", color: Colors.greenAccent)), uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime, androidAllowWhileIdle: true);
+  //     });
+  //   } else {
+  //     print("not granted");
+  //   }
+  // }
 }
