@@ -1,3 +1,4 @@
+import 'package:chatting_app/Helper/privacy.dart';
 import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Model/chatGroupModel.dart';
 import 'package:chatting_app/Model/chatModel.dart';
@@ -275,7 +276,9 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                             style: Theme.of(context).textTheme.bodyLarge,
                           ),
                           Text(
-                            data.lastMsg.toString().replaceAll('\n', ' '),
+                            data.lastMsgTime!.compareTo(Timestamp.fromDate(DateTime.parse("2023-05-15"))) >= 0 ?
+                            MessagePrivacy.decryption(data.lastMsg.toString().trim()).replaceAll('\n', ' ')
+                              : data.lastMsg.toString().trim().replaceAll('\n', ' '),
                             style: Theme.of(context).textTheme.bodySmall,
                             overflow: TextOverflow.ellipsis,
                           )
