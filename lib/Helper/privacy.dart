@@ -14,11 +14,19 @@ class MessagePrivacy {
   }
 
   static decryption(String encryptedText) {
-    final cipherKey = Key.fromUtf8(key);
-    final encryptionService = Encrypter(AES(cipherKey, mode: AESMode.cbc));
-    final initVector = IV.fromUtf8(key.substring(0, 16));
-    final result = encryptionService.decrypt(Encrypted.from64(encryptedText), iv: initVector);
-    print("decrypted  " + result);
-    return result;
+    print("text"+encryptedText);
+    // String text = encryptedText;
+    try {
+      final cipherKey = Key.fromUtf8(key);
+      final encryptionService = Encrypter(AES(cipherKey, mode: AESMode.cbc));
+      final initVector = IV.fromUtf8(key.substring(0, 16));
+      final result = encryptionService.decrypt(Encrypted.from64(encryptedText), iv: initVector);
+      print("decrypted  " + result);
+      return result;
+    } on Exception catch (e) {
+     print("error");
+     return encryptedText;
+    }
+
   }
 }
