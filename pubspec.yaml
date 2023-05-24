@@ -41,7 +41,7 @@ dependencies:
   flutter_linkify: ^5.0.2
   firebase_storage: ^11.0.14
   contacts_service:
-  permission_handler:
+  permission_handler: ^10.2.0
   cached_network_image: ^3.2.3
   file_picker: ^5.2.6
   video_player: ^2.6.0
@@ -51,6 +51,8 @@ dependencies:
   firebase_analytics:
   flutter_local_notifications: ^13.0.0
   encrypt: ^5.0.1
+  agora_rtc_engine: ^6.0.0
+
 
 #  flutter_contacts:
   # The following adds the Cupertino Icons font to your application.
