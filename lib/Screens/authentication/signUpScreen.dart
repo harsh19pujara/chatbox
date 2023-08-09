@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:chatting_app/Functionality/authentication.dart';
 import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Model/userModel.dart';
