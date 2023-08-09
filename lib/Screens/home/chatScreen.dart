@@ -42,7 +42,6 @@ class _ChatScreenState extends State<ChatScreen> {
   bool scrollingUp = false;
   bool prevScroll = false;
 
-
   @override
   void initState() {
     updateUserOnlineStatus(true);
@@ -187,10 +186,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // Time label code
 
-
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
@@ -252,9 +249,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           actions: [
             IconButton(
-                onPressed: () {
-
-                },
+                onPressed: () {},
                 icon: const Icon(
                   Icons.call,
                   color: Colors.black,
@@ -344,7 +339,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId.toString()).snapshots(),
                   builder: (context, chatRoomSnapshot) {
                     return StreamBuilder(
-                      // ************* FETCHING CHAT DATA  ******************
+                      /// ************* FETCHING CHAT DATA  ******************
                       stream: FirebaseFirestore.instance
                           .collection("chatRooms")
                           .doc(widget.chatRoom.chatRoomId.toString())
@@ -357,463 +352,401 @@ class _ChatScreenState extends State<ChatScreen> {
                             return MessageModel.fromJson(e.data());
                           }).toList();
 
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                            child: NotificationListener<ScrollNotification>(
-                              onNotification: (notification) {
-                                if(notification.metrics.axisDirection == AxisDirection.down){
-                                  print("scrollDown");
-                                  scrollingUp = false;
-                                  return false;
-                                }else{
-                                  print("scroll up");
-                                  scrollingUp = true;
-                                  return true;
+                          return ListView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            reverse: true,
+                            itemCount: messageList.length,
+                            itemBuilder: (context, index) {
+                              if (chatRoomSnapshot.hasData) {
+                                if (messageList[index].senderId.toString() != widget.currentUser.id.toString()) {
+                                  bool isOnline = chatRoomSnapshot.data!["online"][widget.currentUser.id];
+                                  if (isOnline == true && messageList[index].seen == false) {
+                                    updateMessageOnlineStatus(messageList[index].msgId.toString(), true);
+                                  }
                                 }
-                              },
-                              child: ListView.builder(
-                                physics: const BouncingScrollPhysics(),
-                                reverse: true,
-                                itemCount: messageList.length,
+                              }
 
-                                itemBuilder: (context, index) {
-                                  /* Code for time label starts */
-                                  bool isSameDate = false;
-                                  String? newDate = '';
-                                  if(scrollingUp  != prevScroll){
-                                    chattedDate = [];
-                                  }
-                                  prevScroll == scrollingUp;
-
-                                  // if (index == 0 && messageList.length == 1) {
-                                  //   newDate = groupMessageDateAndTime(messageList[index].createdOn!).toString();
-                                  // } else if (index == messageList.length - 1) {
-                                  //   newDate = groupMessageDateAndTime(messageList[index].createdOn!).toString();
-                                  // } else {
-                                    final DateTime date = returnDateAndTimeFormat(messageList[index].createdOn!);
-                                    final DateTime prevDate = returnDateAndTimeFormat(messageList[index + 1].createdOn!);
-                                    if (date == prevDate) {
-                                      newDate = "";
-                                    } else {
-                                      if (!chattedDate
-                                          .contains(groupMessageDateAndTime(messageList[index].createdOn!).toString())) {
-                                        newDate = groupMessageDateAndTime(messageList[index].createdOn!).toString();
-                                        chattedDate.add(groupMessageDateAndTime(
-                                            messageList[index].createdOn!)
-                                            .toString());
-
-                                      }
-                                    }
-                                  // }
-
-
-                                  /* Code for time label ends */
-
-                                  if (chatRoomSnapshot.hasData) {
-                                    if (messageList[index].senderId.toString() != widget.currentUser.id.toString()) {
-                                      bool isOnline = chatRoomSnapshot.data!["online"][widget.currentUser.id];
-                                      if (isOnline == true && messageList[index].seen == false) {
-                                        updateMessageOnlineStatus(messageList[index].msgId.toString(), true);
-                                      }
-                                    }
-                                  }
-
-
-
-                                  ///*************************   SHOW TEXT IN CHAT   *******************************
-                                  if (messageList[index].msgType == "text") {
-                                    String theMsg = "";
-                                    String theRepliedMsg = "";
-                                    if (messageList[index].isEncrypted != null) {
-                                      theMsg = MessagePrivacy.decryption(messageList[index].msg.toString());
-                                      theRepliedMsg = messageList[index].repliedTo.toString() != ""
-                                          ? MessagePrivacy.decryption(messageList[index].repliedTo.toString())
-                                          : messageList[index].repliedTo.toString();
-                                    } else {
-                                      theMsg = messageList[index].msg.toString();
-                                      theRepliedMsg = messageList[index].repliedTo.toString();
-                                    }
-                                    return Column(
-                                      children: [
-                                        newDate.isNotEmpty
-                                            ? Center(
-                                                child: Container(
-                                                    margin: const EdgeInsets.all(10.0),
-                                                    decoration: BoxDecoration(
-                                                        color: const Color.fromARGB(255, 133, 177, 133),
-                                                        borderRadius: BorderRadius.circular(20)),
-                                                    child: Padding(
-                                                      padding: const EdgeInsets.all(8.0),
-                                                      child: Text(newDate, style: const TextStyle(color: Colors.white)),
-                                                    )))
-                                            : const SizedBox.shrink(),
-                                        Dismissible(
-                                          key: UniqueKey(),
-                                          dismissThresholds: messageList[index].senderId == widget.currentUser.id
-                                              ? const {DismissDirection.endToStart: 0.5}
-                                              : const {DismissDirection.startToEnd: 0.5},
-                                          onUpdate: (details) {
-                                            if (details.reached) {
-                                              setState(() {
-                                                doReply = true;
-                                                replyMsg = theMsg;
-                                              });
-                                            }
-                                          },
-                                          child: SizedBox(
-                                            // color: Colors.blueGrey,
-                                            width: MediaQuery.of(context).size.width - 100,
-                                            child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
-                                                    ? MainAxisAlignment.end
-                                                    : MainAxisAlignment.start,
-                                                children: [
-                                                  Container(
-                                                      margin: const EdgeInsets.symmetric(vertical: 1.5),
-                                                      padding: const EdgeInsets.fromLTRB(12, 10, 16, 8),
-                                                      decoration: BoxDecoration(
-                                                          color: messageList[index].senderId == widget.currentUser.id
-                                                              ? CustomColor.userColor
-                                                              : CustomColor.friendColor,
-                                                          borderRadius: messageList[index].senderId == widget.currentUser.id
-                                                              ? const BorderRadius.only(
-                                                                  bottomRight: Radius.circular(15),
-                                                                  topRight: Radius.zero,
-                                                                  topLeft: Radius.circular(15),
-                                                                  bottomLeft: Radius.circular(15))
-                                                              : const BorderRadius.only(
-                                                                  bottomRight: Radius.circular(15),
-                                                                  topRight: Radius.circular(15),
-                                                                  topLeft: Radius.zero,
-                                                                  bottomLeft: Radius.circular(15))),
-                                                      child: Column(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        crossAxisAlignment: messageList[index].senderId.toString() ==
-                                                                widget.currentUser.id.toString()
+                              ///*************************   SHOW TEXT IN CHAT   *******************************
+                              if (messageList[index].msgType == "text") {
+                                String theMsg = "";
+                                String theRepliedMsg = "";
+                                if (messageList[index].isEncrypted != null) {
+                                  theMsg = MessagePrivacy.decryption(messageList[index].msg.toString());
+                                  theRepliedMsg = messageList[index].repliedTo.toString() != ""
+                                      ? MessagePrivacy.decryption(messageList[index].repliedTo.toString())
+                                      : messageList[index].repliedTo.toString();
+                                } else {
+                                  theMsg = messageList[index].msg.toString();
+                                  theRepliedMsg = messageList[index].repliedTo.toString();
+                                }
+                                return Column(
+                                  children: [
+                                    Dismissible(
+                                      key: UniqueKey(),
+                                      direction: messageList[index].senderId == widget.currentUser.id
+                                          ? DismissDirection.endToStart
+                                          : DismissDirection.startToEnd,
+                                      dismissThresholds: messageList[index].senderId == widget.currentUser.id
+                                          ? const {DismissDirection.endToStart: 0.5}
+                                          : const {DismissDirection.startToEnd: 0.5},
+                                      onUpdate: (details) {
+                                        if (details.reached) {
+                                          setState(() {
+                                            doReply = true;
+                                            replyMsg = theMsg;
+                                          });
+                                        }
+                                      },
+                                      child: SizedBox(
+                                        width: MediaQuery.of(context).size.width - 30,
+                                        child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                                ? MainAxisAlignment.end
+                                                : MainAxisAlignment.start,
+                                            children: [
+                                              Container(
+                                                  margin: const EdgeInsets.symmetric(vertical: 1.5),
+                                                  padding: const EdgeInsets.fromLTRB(12, 10, 16, 8),
+                                                  decoration: BoxDecoration(
+                                                      color: messageList[index].senderId == widget.currentUser.id
+                                                          ? CustomColor.userColor
+                                                          : CustomColor.friendColor,
+                                                      borderRadius: messageList[index].senderId == widget.currentUser.id
+                                                          ? const BorderRadius.only(
+                                                              bottomRight: Radius.circular(15),
+                                                              topRight: Radius.zero,
+                                                              topLeft: Radius.circular(15),
+                                                              bottomLeft: Radius.circular(15))
+                                                          : const BorderRadius.only(
+                                                              bottomRight: Radius.circular(15),
+                                                              topRight: Radius.circular(15),
+                                                              topLeft: Radius.zero,
+                                                              bottomLeft: Radius.circular(15))),
+                                                  child: Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    crossAxisAlignment:
+                                                        messageList[index].senderId.toString() == widget.currentUser.id.toString()
                                                             ? CrossAxisAlignment.end
                                                             : CrossAxisAlignment.start,
+                                                    children: [
+                                                      theRepliedMsg != ''
+                                                          ? Container(
+                                                              /// SHOW REPLIED MESSAGE TEXT
+                                                              constraints: const BoxConstraints(
+                                                                  maxWidth: 295, maxHeight: 100, minWidth: 85),
+                                                              padding:
+                                                                  const EdgeInsets.only(left: 10, right: 10, top: 6, bottom: 6),
+                                                              margin: const EdgeInsets.only(bottom: 5),
+                                                              decoration: BoxDecoration(
+                                                                borderRadius: BorderRadius.circular(10),
+                                                                color: const Color(0xFFeaf7e4),
+                                                                border: Border.all(width: 0.1),
+                                                              ),
+                                                              child: Text(
+                                                                theRepliedMsg,
+                                                                overflow: TextOverflow.fade,
+                                                              ),
+                                                            )
+                                                          : Container(),
+                                                      Row(
+                                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                                        mainAxisSize: MainAxisSize.min,
                                                         children: [
-                                                          theRepliedMsg != ''
-                                                              ? Container(
-                                                                  /// SHOW REPLIED MESSAGE TEXT
-                                                                  constraints: const BoxConstraints(
-                                                                      maxWidth: 295, maxHeight: 100, minWidth: 85),
-                                                                  padding:
-                                                                      const EdgeInsets.only(left: 5, right: 5, top: 3, bottom: 3),
-                                                                  margin: const EdgeInsets.only(bottom: 5),
-                                                                  decoration: BoxDecoration(
-                                                                    borderRadius: BorderRadius.circular(10),
-                                                                    color: const Color(0xFFeaf7e4),
-                                                                    border: Border.all(width: 0.1),
-                                                                  ),
-                                                                  child: Text(
-                                                                    theRepliedMsg,
-                                                                    overflow: TextOverflow.fade,
-                                                                  ),
-                                                                )
-                                                              : Container(),
-                                                          Row(
-                                                            crossAxisAlignment: CrossAxisAlignment.end,
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: [
-                                                              LimitedBox(
-                                                                maxWidth: 240,
-                                                                child: Linkify(
-                                                                  onOpen: (link) async {
-                                                                    if (await canLaunchUrl(Uri.parse(link.url))) {
-                                                                      await launchUrl(
-                                                                        Uri.parse(link.url),
-                                                                        mode: LaunchMode.externalApplication,
-                                                                      );
-                                                                    } else {
-                                                                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                                                                    }
-                                                                  },
-                                                                  text: theMsg,
-                                                                  style: Theme.of(context).textTheme.bodyMedium,
-                                                                  softWrap: true,
-                                                                  maxLines: null,
-                                                                  linkifiers: const [EmailLinkifier(), UrlLinkifier()],
-                                                                  linkStyle: const TextStyle(color: Colors.blueAccent),
-                                                                  textAlign: TextAlign.start,
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 5,
-                                                              ),
-                                                              Text(
-                                                                "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
-                                                                style: Theme.of(context)
-                                                                    .textTheme
-                                                                    .bodySmall!
-                                                                    .copyWith(fontStyle: FontStyle.italic),
-                                                              ),
-                                                              messageList[index].senderId == widget.currentUser.id
-                                                                  ? (Icon(Icons.check,
-                                                                      color: messageList[index].seen == true
-                                                                          ? Colors.blue
-                                                                          : Colors.grey,
-                                                                      size: 17))
-                                                                  : const SizedBox(
-                                                                      width: 2,
-                                                                    )
-                                                            ],
+                                                          LimitedBox(
+                                                            maxWidth: MediaQuery.of(context).size.width / 1.5,
+                                                            child: Linkify(
+                                                              onOpen: (link) async {
+                                                                if (await canLaunchUrl(Uri.parse(link.url))) {
+                                                                  await launchUrl(
+                                                                    Uri.parse(link.url),
+                                                                    mode: LaunchMode.externalApplication,
+                                                                  );
+                                                                } else {
+                                                                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                                                                }
+                                                              },
+                                                              text: theMsg,
+                                                              style: Theme.of(context).textTheme.bodyMedium,
+                                                              softWrap: true,
+                                                              maxLines: null,
+                                                              linkifiers: const [EmailLinkifier(), UrlLinkifier()],
+                                                              linkStyle: const TextStyle(color: Colors.blueAccent),
+                                                              textAlign: TextAlign.start,
+                                                            ),
                                                           ),
+                                                          const SizedBox(
+                                                            width: 5,
+                                                          ),
+                                                          Text(
+                                                            "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .bodySmall!
+                                                                .copyWith(fontStyle: FontStyle.italic),
+                                                          ),
+                                                          messageList[index].senderId == widget.currentUser.id
+                                                              ? (Icon(Icons.check,
+                                                                  color:
+                                                                      messageList[index].seen == true ? Colors.blue : Colors.grey,
+                                                                  size: 17))
+                                                              : const SizedBox(
+                                                                  width: 2,
+                                                                )
                                                         ],
-                                                      ))
-                                                ]),
-                                          ),
+                                                      ),
+                                                    ],
+                                                  ))
+                                            ]),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              /// ****************** SHOW IMAGES IN CHAT *********************
+                              else if (messageList[index].msgType == "img") {
+                                return Dismissible(
+                                  key: UniqueKey(),
+                                  dismissThresholds: messageList[index].senderId == widget.currentUser.id
+                                      ? const {DismissDirection.endToStart: 0.5}
+                                      : const {DismissDirection.startToEnd: 0.5},
+                                  onUpdate: (details) {
+                                    if (details.reached) {
+                                      setState(() {
+                                        doReply = true;
+                                        replyMsg = messageList[index].msg.toString();
+                                      });
+                                    }
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                        ? MainAxisAlignment.end
+                                        : MainAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.symmetric(vertical: 3),
+                                        padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
+                                        decoration: BoxDecoration(
+                                            color: messageList[index].senderId == widget.currentUser.id
+                                                ? const Color(0xFFb3f2c7)
+                                                : const Color(0xFFa8e5f0),
+                                            borderRadius: messageList[index].senderId == widget.currentUser.id
+                                                ? const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.zero,
+                                                    topLeft: Radius.circular(15),
+                                                    bottomLeft: Radius.circular(15))
+                                                : const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.circular(15),
+                                                    topLeft: Radius.zero,
+                                                    bottomLeft: Radius.circular(15))),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            LimitedBox(
+                                              maxWidth: MediaQuery.of(context).size.width / 1.5,
+                                              maxHeight: MediaQuery.of(context).size.height / 2.5,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ShowImage(imgUrl: messageList[index].msg.toString()),
+                                                      ));
+                                                },
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  child: CachedNetworkImage(
+                                                      imageUrl: messageList[index].msg.toString(),
+                                                      fit: BoxFit.fill,
+                                                      placeholder: (context, url) => Container(
+                                                            color: Colors.grey,
+                                                            child: const Center(child: CircularProgressIndicator()),
+                                                          ),
+                                                      errorWidget: (context, url, error) {
+                                                        if (url == "dummy data") {
+                                                          return Container(
+                                                            color: Colors.grey,
+                                                            child: const Center(child: CircularProgressIndicator()),
+                                                          );
+                                                        } else {
+                                                          return Text(
+                                                            " ** An error Occurred while Loading Img **",
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .bodySmall!
+                                                                .copyWith(fontStyle: FontStyle.italic),
+                                                          );
+                                                        }
+                                                      }),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 2,
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall!
+                                                      .copyWith(fontStyle: FontStyle.italic),
+                                                ),
+                                                messageList[index].senderId == widget.currentUser.id
+                                                    ? (Icon(Icons.check,
+                                                        color: messageList[index].seen == true ? Colors.blue : Colors.grey,
+                                                        size: 17))
+                                                    : const SizedBox(
+                                                        width: 4,
+                                                      )
+                                              ],
+                                            )
+                                          ],
                                         ),
-                                      ],
-                                    );
-                                  }
-
-                                  /// ****************** SHOW IMAGES IN CHAT *********************
-                                  else if (messageList[index].msgType == "img") {
-                                    return Dismissible(
-                                      key: UniqueKey(),
-                                      dismissThresholds: messageList[index].senderId == widget.currentUser.id
-                                          ? const {DismissDirection.endToStart: 0.5}
-                                          : const {DismissDirection.startToEnd: 0.5},
-                                      onUpdate: (details) {
-                                        if (details.reached) {
-                                          setState(() {
-                                            doReply = true;
-                                            replyMsg = messageList[index].msg.toString();
-                                          });
-                                        }
-                                      },
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
-                                            ? MainAxisAlignment.end
-                                            : MainAxisAlignment.start,
-                                        children: [
-                                          Container(
-                                            margin: const EdgeInsets.symmetric(vertical: 3),
-                                            padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
-                                            decoration: BoxDecoration(
-                                                color: messageList[index].senderId == widget.currentUser.id
-                                                    ? const Color(0xFFb3f2c7)
-                                                    : const Color(0xFFa8e5f0),
-                                                borderRadius: messageList[index].senderId == widget.currentUser.id
-                                                    ? const BorderRadius.only(
-                                                        bottomRight: Radius.circular(15),
-                                                        topRight: Radius.zero,
-                                                        topLeft: Radius.circular(15),
-                                                        bottomLeft: Radius.circular(15))
-                                                    : const BorderRadius.only(
-                                                        bottomRight: Radius.circular(15),
-                                                        topRight: Radius.circular(15),
-                                                        topLeft: Radius.zero,
-                                                        bottomLeft: Radius.circular(15))),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: [
-                                                LimitedBox(
-                                                  maxWidth: MediaQuery.of(context).size.width / 1.5,
-                                                  maxHeight: MediaQuery.of(context).size.height / 2.5,
-                                                  child: GestureDetector(
-                                                    onTap: () {
-                                                      Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                ShowImage(imgUrl: messageList[index].msg.toString()),
-                                                          ));
-                                                    },
-                                                    child: ClipRRect(
-                                                      borderRadius: BorderRadius.circular(6),
-                                                      child: CachedNetworkImage(
-                                                          imageUrl: messageList[index].msg.toString(),
-                                                          fit: BoxFit.fill,
-                                                          placeholder: (context, url) => Container(
-                                                                color: Colors.grey,
-                                                                child: const Center(child: CircularProgressIndicator()),
-                                                              ),
-                                                          errorWidget: (context, url, error) {
-                                                            if (url == "dummy data") {
-                                                              return Container(
-                                                                color: Colors.grey,
-                                                                child: const Center(child: CircularProgressIndicator()),
-                                                              );
-                                                            } else {
-                                                              return Text(
-                                                                " ** An error Occurred while Loading Img **",
-                                                                style: Theme.of(context)
-                                                                    .textTheme
-                                                                    .bodySmall!
-                                                                    .copyWith(fontStyle: FontStyle.italic),
-                                                              );
-                                                            }
-                                                          }),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                  height: 2,
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall!
-                                                          .copyWith(fontStyle: FontStyle.italic),
-                                                    ),
-                                                    messageList[index].senderId == widget.currentUser.id
-                                                        ? (Icon(Icons.check,
-                                                            color: messageList[index].seen == true ? Colors.blue : Colors.grey,
-                                                            size: 17))
-                                                        : const SizedBox(
-                                                            width: 4,
-                                                          )
-                                                  ],
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ],
                                       ),
-                                    );
+                                    ],
+                                  ),
+                                );
 
-                                    /// ****************** SHOW VIDEOS IN CHAT *********************
-                                  } else if (messageList[index].msgType == "video") {
-                                    return Dismissible(
-                                      key: UniqueKey(),
-                                      dismissThresholds: messageList[index].senderId == widget.currentUser.id
-                                          ? const {DismissDirection.endToStart: 0.5}
-                                          : const {DismissDirection.startToEnd: 0.5},
-                                      onUpdate: (details) {
-                                        if (details.reached) {
-                                          setState(() {
-                                            doReply = true;
-                                            replyMsg = messageList[index].msg.toString();
-                                          });
-                                        }
-                                      },
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
-                                            ? MainAxisAlignment.end
-                                            : MainAxisAlignment.start,
-                                        children: [
-                                          Container(
-                                            margin: const EdgeInsets.symmetric(vertical: 3),
-                                            padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
-                                            decoration: BoxDecoration(
-                                                color: messageList[index].senderId == widget.currentUser.id
-                                                    ? const Color(0xFFb3f2c7)
-                                                    : const Color(0xFFa8e5f0),
-                                                borderRadius: messageList[index].senderId == widget.currentUser.id
-                                                    ? const BorderRadius.only(
-                                                        bottomRight: Radius.circular(15),
-                                                        topRight: Radius.zero,
-                                                        topLeft: Radius.circular(15),
-                                                        bottomLeft: Radius.circular(15))
-                                                    : const BorderRadius.only(
-                                                        bottomRight: Radius.circular(15),
-                                                        topRight: Radius.circular(15),
-                                                        topLeft: Radius.zero,
-                                                        bottomLeft: Radius.circular(15))),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: [
-                                                LimitedBox(
-                                                  maxWidth: MediaQuery.of(context).size.width / 1.5,
-                                                  maxHeight: MediaQuery.of(context).size.height / 2.5,
-                                                  child: GestureDetector(
-                                                    onTap: () {
-                                                      Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                PlayVideo(videoUrl: messageList[index].msg.toString()),
-                                                          ));
-                                                    },
-                                                    child: ClipRRect(
-                                                      borderRadius: BorderRadius.circular(6),
-                                                      child: CachedNetworkImage(
-                                                          imageUrl: messageList[index].thumbnail.toString(),
-                                                          fit: BoxFit.fill,
-                                                          placeholder: (context, url) => Container(
-                                                                color: Colors.grey,
-                                                                child: const Center(child: CircularProgressIndicator()),
-                                                              ),
-                                                          errorWidget: (context, url, error) {
-                                                            if (url == "dummy data") {
-                                                              return Container(
-                                                                color: Colors.grey,
-                                                                child: const Center(child: CircularProgressIndicator()),
-                                                              );
-                                                            } else {
-                                                              return Text(
-                                                                " ** An error Occurred while Loading Video **",
-                                                                style: Theme.of(context)
-                                                                    .textTheme
-                                                                    .bodySmall!
-                                                                    .copyWith(fontStyle: FontStyle.italic),
-                                                              );
-                                                            }
-                                                          }),
-                                                    ),
-                                                  ),
+                                /// ****************** SHOW VIDEOS IN CHAT *********************
+                              } else if (messageList[index].msgType == "video") {
+                                return Dismissible(
+                                  key: UniqueKey(),
+                                  dismissThresholds: messageList[index].senderId == widget.currentUser.id
+                                      ? const {DismissDirection.endToStart: 0.5}
+                                      : const {DismissDirection.startToEnd: 0.5},
+                                  onUpdate: (details) {
+                                    if (details.reached) {
+                                      setState(() {
+                                        doReply = true;
+                                        replyMsg = messageList[index].msg.toString();
+                                      });
+                                    }
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                        ? MainAxisAlignment.end
+                                        : MainAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.symmetric(vertical: 3),
+                                        padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
+                                        decoration: BoxDecoration(
+                                            color: messageList[index].senderId == widget.currentUser.id
+                                                ? const Color(0xFFb3f2c7)
+                                                : const Color(0xFFa8e5f0),
+                                            borderRadius: messageList[index].senderId == widget.currentUser.id
+                                                ? const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.zero,
+                                                    topLeft: Radius.circular(15),
+                                                    bottomLeft: Radius.circular(15))
+                                                : const BorderRadius.only(
+                                                    bottomRight: Radius.circular(15),
+                                                    topRight: Radius.circular(15),
+                                                    topLeft: Radius.zero,
+                                                    bottomLeft: Radius.circular(15))),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            LimitedBox(
+                                              maxWidth: MediaQuery.of(context).size.width / 1.5,
+                                              maxHeight: MediaQuery.of(context).size.height / 2.5,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            PlayVideo(videoUrl: messageList[index].msg.toString()),
+                                                      ));
+                                                },
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  child: CachedNetworkImage(
+                                                      imageUrl: messageList[index].thumbnail.toString(),
+                                                      fit: BoxFit.fill,
+                                                      placeholder: (context, url) => Container(
+                                                            color: Colors.grey,
+                                                            child: const Center(child: CircularProgressIndicator()),
+                                                          ),
+                                                      errorWidget: (context, url, error) {
+                                                        if (url == "dummy data") {
+                                                          return Container(
+                                                            color: Colors.grey,
+                                                            child: const Center(child: CircularProgressIndicator()),
+                                                          );
+                                                        } else {
+                                                          return Text(
+                                                            " ** An error Occurred while Loading Video **",
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .bodySmall!
+                                                                .copyWith(fontStyle: FontStyle.italic),
+                                                          );
+                                                        }
+                                                      }),
                                                 ),
-                                                const SizedBox(
-                                                  height: 2,
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall!
-                                                          .copyWith(fontStyle: FontStyle.italic),
-                                                    ),
-                                                    messageList[index].senderId == widget.currentUser.id
-                                                        ? (Icon(Icons.check,
-                                                            color: messageList[index].seen == true ? Colors.blue : Colors.grey,
-                                                            size: 17))
-                                                        : const SizedBox(
-                                                            width: 4,
-                                                          )
-                                                  ],
-                                                )
-                                              ],
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(
+                                              height: 2,
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "${messageList[index].createdOn!.toDate().hour}:${(messageList[index].createdOn!.toDate().minute).toString().padLeft(2, "0")}",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall!
+                                                      .copyWith(fontStyle: FontStyle.italic),
+                                                ),
+                                                messageList[index].senderId == widget.currentUser.id
+                                                    ? (Icon(Icons.check,
+                                                        color: messageList[index].seen == true ? Colors.blue : Colors.grey,
+                                                        size: 17))
+                                                    : const SizedBox(
+                                                        width: 4,
+                                                      )
+                                              ],
+                                            )
+                                          ],
+                                        ),
                                       ),
-                                    );
+                                    ],
+                                  ),
+                                );
 
-                                    /// ****************** SHOW PDF IN CHAT *********************
-                                  } else if (messageList[index].msgType == "pdf") {
-                                    return Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
-                                          ? MainAxisAlignment.end
-                                          : MainAxisAlignment.start,
-                                      children: const [
-                                        Text("pdf Data"),
-                                      ],
-                                    );
-                                  } else {
-                                    return Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
-                                          ? MainAxisAlignment.end
-                                          : MainAxisAlignment.start,
-                                      children: const [
-                                        Text("Random Data"),
-                                      ],
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
+                                /// ****************** SHOW PDF IN CHAT *********************
+                              } else if (messageList[index].msgType == "pdf") {
+                                return Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                      ? MainAxisAlignment.end
+                                      : MainAxisAlignment.start,
+                                  children: const [
+                                    Text("pdf Data"),
+                                  ],
+                                );
+                              } else {
+                                return Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: messageList[index].senderId == widget.currentUser.id
+                                      ? MainAxisAlignment.end
+                                      : MainAxisAlignment.start,
+                                  children: const [
+                                    Text("Random Data"),
+                                  ],
+                                );
+                              }
+                            },
                           );
                         } else if (snapshot.hasError) {
                           return const Text("Please Check Your Internet Connection");
@@ -829,100 +762,103 @@ class _ChatScreenState extends State<ChatScreen> {
               ///****************   BOTTOM TEXT FIELD, SEND FILES   ************************
               Container(
                 // height: 60,
-                margin: const EdgeInsets.only(top: 3, bottom: 2, left: 3, right: 3),
-                // color: Colors.red,
-                // padding: EdgeInsets.symmetric(vertical: 5,horizontal: 10),
+                margin: const EdgeInsets.only(top: 3, bottom: 2, left: 10, right: 10),
 
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.only(top: 4, bottom: 4, right: 5),
-                      decoration: BoxDecoration(
-                          color: doReply ? Colors.blueGrey[300] : null,
-                          borderRadius: const BorderRadius.all(Radius.circular(15))),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          doReply
-                              ? Align(
-                                  alignment: Alignment.topRight,
-                                  child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          replyMsg = "";
-                                          doReply = false;
-                                        });
-                                      },
-                                      child: const Icon(
-                                        Icons.cancel_outlined,
-                                        color: Colors.white,
-                                        size: 15,
-                                      )))
-                              : Container(),
-                          doReply
-                              ? Container(
-                                  constraints: const BoxConstraints(maxHeight: 70, minHeight: 30),
-                                  // height: 70,
-                                  width: 280,
-                                  padding: const EdgeInsets.only(left: 10, right: 0, top: 5, bottom: 3),
-                                  margin: const EdgeInsets.only(bottom: 5),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color: const Color(0xFFeaf7e4),
-                                    border: Border.all(width: 0.1),
-                                  ),
-                                  child: Text(replyMsg, style: const TextStyle(), overflow: TextOverflow.fade),
-                                )
-                              : Container(),
-                          Row(
-                            children: [
-                              ElevatedButton(
-                                  onPressed: () {
-                                    openImagePicker();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.all(2),
-                                      backgroundColor: Colors.transparent,
-                                      elevation: 0,
-                                      minimumSize: const Size(40, 50)),
-                                  child: SizedBox(
-                                      child: Image.asset(
-                                    "assets/images/Clip.png",
-                                    width: 22,
-                                  ))),
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
-                                child: LimitedBox(
-                                  maxHeight: 70,
-                                  child: SizedBox(
-                                    width: 236,
-                                    child: TextField(
-                                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
-                                      controller: msgController,
-                                      textCapitalization: TextCapitalization.sentences,
-                                      maxLines: null,
-                                      keyboardType: TextInputType.multiline,
-                                      decoration: InputDecoration(
-                                          focusedBorder: const OutlineInputBorder(
-                                              borderRadius: BorderRadius.all(Radius.circular(15)),
-                                              borderSide: BorderSide(color: Colors.transparent)),
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                          filled: true,
-                                          fillColor: Colors.black12,
-                                          hintText: "Enter Text...",
-                                          hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.blueGrey),
-                                          enabledBorder: const OutlineInputBorder(
-                                              borderRadius: BorderRadius.all(Radius.circular(10)),
-                                              borderSide: BorderSide(color: Colors.transparent))),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.only(top: 4, bottom: 4, right: 5),
+                        decoration: BoxDecoration(
+                            color: doReply ? Colors.blueGrey[300] : null,
+                            borderRadius: const BorderRadius.all(Radius.circular(15))),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            doReply
+                                ? Align(
+                                    alignment: Alignment.topRight,
+                                    child: GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            replyMsg = "";
+                                            doReply = false;
+                                          });
+                                        },
+                                        child: const Icon(
+                                          Icons.cancel_outlined,
+                                          color: Colors.white,
+                                          size: 15,
+                                        )))
+                                : Container(),
+                            doReply
+                                ? Container(
+                                    constraints: const BoxConstraints(maxHeight: 70, minHeight: 30),
+                                    // height: 70,
+                                    width: 280,
+                                    padding: const EdgeInsets.only(left: 10, right: 0, top: 5, bottom: 3),
+                                    margin: const EdgeInsets.only(bottom: 5),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(15),
+                                      color: const Color(0xFFeaf7e4),
+                                      border: Border.all(width: 0.1),
+                                    ),
+                                    child: Text(replyMsg, style: const TextStyle(), overflow: TextOverflow.fade),
+                                  )
+                                : Container(),
+                            Row(
+                              children: [
+                                ElevatedButton(
+                                    onPressed: () {
+                                      openImagePicker();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.all(2),
+                                        backgroundColor: Colors.transparent,
+                                        elevation: 0,
+                                        minimumSize: const Size(40, 50)),
+                                    child: SizedBox(
+                                        child: Image.asset(
+                                      "assets/images/Clip.png",
+                                      width: 22,
+                                    ))),
+                                Expanded(
+                                  child: Container(
+                                    // width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+                                    child: LimitedBox(
+                                      maxHeight: 70,
+                                      child: SizedBox(
+                                        // width: 236,
+                                        child: TextField(
+                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.black),
+                                          controller: msgController,
+                                          textCapitalization: TextCapitalization.sentences,
+                                          maxLines: null,
+                                          keyboardType: TextInputType.multiline,
+                                          decoration: InputDecoration(
+                                              focusedBorder: const OutlineInputBorder(
+                                                  borderRadius: BorderRadius.all(Radius.circular(15)),
+                                                  borderSide: BorderSide(color: Colors.transparent)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                              filled: true,
+                                              fillColor: Colors.black12,
+                                              hintText: "Enter Text...",
+                                              hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.blueGrey),
+                                              enabledBorder: const OutlineInputBorder(
+                                                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                                                  borderSide: BorderSide(color: Colors.transparent))),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     Padding(

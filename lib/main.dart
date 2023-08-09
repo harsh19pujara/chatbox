@@ -16,7 +16,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   String? token = await FirebaseMessaging.instance.getToken();
-  print("token  " + token.toString());
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: CustomTheme.lightTheme(),

@@ -265,8 +265,9 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                     const SizedBox(
                       width: 10,
                     ),
-                    SizedBox(
-                      width: 150,
+                    Expanded(
+                      flex: 7,
+                      // width: 150,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,6 +290,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                       width: 25,
                     ),
                     Expanded(
+                      flex: 1,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.end,
