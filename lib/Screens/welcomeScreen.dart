@@ -1,11 +1,17 @@
+import 'package:chatting_app/Functionality/authentication.dart';
+import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/authentication/signUpScreen.dart';
+import 'package:chatting_app/Screens/home/home.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chatting_app/widgets/widgets.dart';
 import 'package:chatting_app/Screens/authentication/loginScreen.dart';
-import 'package:chatting_app/main.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({Key? key}) : super(key: key);
+  WelcomeScreen({Key? key}) : super(key: key);
+  final Authentication _auth = Authentication();
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +21,6 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
-
           toolbarHeight: 60,
           automaticallyImplyLeading: false,
           elevation: 0,
@@ -43,10 +48,11 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     Text(
                       'Connect',
-                      style: Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w500,color: Colors.white),
+                      style:
+                          Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w500, color: Colors.white),
                     ),
                     Text('friends', style: Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w500)),
-                    Text('easily &', style : Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w900)),
+                    Text('easily &', style: Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w900)),
                     Text('quickly', style: Theme.of(context).textTheme.headlineLarge!.copyWith(fontWeight: FontWeight.w900)),
                     SizedBox(
                       height: height / 28,
@@ -61,7 +67,56 @@ class WelcomeScreen extends StatelessWidget {
                       children: [
                         circularLogo('assets/images/instagramLogo.png'),
                         SizedBox(width: height / 28),
-                        circularLogo('assets/images/googleLogo.png'),
+                        GestureDetector(
+                            onTap: () async {
+                              /// [Google Auth]
+                              GoogleSignInAccount? googleAccount = await GoogleSignIn().signIn();
+
+                              if (googleAccount != null) {
+                                await FirebaseAuth.instance.fetchSignInMethodsForEmail(googleAccount.email).then((value) async {
+                                  if (value.isNotEmpty) {
+                                    if (value.contains("google.com")) {
+                                      /// [already signup with google]
+                                      await _auth.loginWithGoogle().then((value) {
+                                        if (value != null) {
+                                          Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) => HomeScreen(
+                                                        userData: value,
+                                                      )),
+                                              (route) => false);
+                                        }
+                                      });
+                                    } else {
+                                      /// [already signup with email password]
+
+                                      await GoogleSignIn().signOut().then((value){
+                                        showToast(
+                                            "You already have account with email/password for this email (Login using email/password)",
+                                            Colors.deepOrangeAccent);
+                                      });
+                                    }
+                                  } else {
+                                    /// [new user]
+                                    _auth.signupWithGoogle().then((value) {
+                                      if (value != null) {
+                                        Navigator.pushAndRemoveUntil(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) => HomeScreen(
+                                                      userData: value,
+                                                    )),
+                                            (route) => false);
+                                      }
+                                    });
+                                  }
+                                });
+                              } else {
+                                showToast("Some error with Google Id", Colors.redAccent);
+                              }
+                            },
+                            child: circularLogo('assets/images/googleLogo.png')),
                         SizedBox(width: height / 28),
                         circularLogo('assets/images/appleLogo.png')
                       ],
@@ -91,7 +146,10 @@ class WelcomeScreen extends StatelessWidget {
                           },
                           child: Text(
                             'Log In',
-                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white,fontWeight: FontWeight.w500),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium!
+                                .copyWith(color: Colors.white, fontWeight: FontWeight.w500),
                           ),
                         )
                       ],

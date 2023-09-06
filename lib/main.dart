@@ -53,15 +53,15 @@ class _MyAppState extends State<MyApp> {
         DocumentSnapshot data = await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
         var temp = data.data() as Map<String, dynamic>;
         userData = UserModel.fromJson(temp);
-        if (this.mounted) {
+        if (mounted) {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen(userData: userData!)));
         }
         // setState(() {
         //   userLoginFlag = true;
         // });
       } else {
-        if (this.mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+        if (mounted) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => WelcomeScreen()));
         }
       }
     });

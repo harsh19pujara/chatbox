@@ -277,7 +277,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                             style: Theme.of(context).textTheme.bodyLarge,
                           ),
                           Text(
-                            data.lastMsgTime!.compareTo(Timestamp.fromDate(DateTime.parse("2023-05-15"))) >= 0 ?
+                            data.lastMsg != "" && data.lastMsg != null ?
                             MessagePrivacy.decryption(data.lastMsg.toString().trim()).replaceAll('\n', ' ')
                               : data.lastMsg.toString().trim().replaceAll('\n', ' '),
                             style: Theme.of(context).textTheme.bodySmall,

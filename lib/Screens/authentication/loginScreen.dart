@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.only(top: 3),
           child: IconButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => WelcomeScreen()));
               },
               icon: const Icon(
                 Icons.arrow_back,
@@ -129,25 +129,29 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 80,
                       ),
                       GestureDetector(
-                          onTap: () {
+                          onTap: () async {
                             if (_loginFormKey.currentState!.validate()) {
                               setState(() {
                                 isLoading = true;
                               });
-                              _auth.login(email: email.text.toString().trim(), pass: pass.text.toString().trim()).then((value) {
-                                print('************  name  ${value!.name}  id ${value.email}  ${value.id}');
-                                isLoading = false;
-                                FirebaseFirestore.instance
+
+                              _auth.login(email: email.text.toString().trim(), pass: pass.text.toString().trim()).then((userData) async {
+                                print('************  name  ${userData!.name}  id ${userData.email}  ${userData.id}');
+                                await FirebaseFirestore.instance
                                     .collection("users")
                                     .doc(auth.currentUser!.uid)
-                                    .update({"isOnline": true});
-                                Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => HomeScreen(
-                                              userData: value,
-                                            )),
-                                    (route) => false);
+                                    .update({"isOnline": true}).then((value){
+                                  isLoading = false;
+
+                                  Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => HomeScreen(
+                                            userData: userData,
+                                          )),
+                                          (route) => false);
+                                });
+
                               });
                             } else {
                               const snackBar = SnackBar(

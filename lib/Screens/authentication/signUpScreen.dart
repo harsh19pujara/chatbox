@@ -23,7 +23,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool showPass = false;
   bool showConfirmPass = false;
 
-
   TextEditingController email = TextEditingController();
   TextEditingController name = TextEditingController();
   TextEditingController pass = TextEditingController();
@@ -38,12 +37,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     double height = MediaQuery.of(context).size.height;
     // double width = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor:CustomColor.authenticationBackground,
+      backgroundColor: CustomColor.authenticationBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -52,7 +50,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           padding: const EdgeInsets.only(top: 3),
           child: IconButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => WelcomeScreen()));
               },
               icon: const Icon(
                 Icons.arrow_back,
@@ -73,14 +71,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         const SizedBox(
                           height: 10,
                         ),
-                         Text(
+                        Text(
                           'Sign up with Email',
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
                         const SizedBox(
                           height: 20,
                         ),
-                         Padding(
+                        Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 40),
                           child: Text(
                             'Get chatting with friends and family today by signing up for our chat app!',
@@ -103,8 +101,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               return null;
                             }
                           },
-                          decoration:
-                               InputDecoration(labelText: 'Your Name', labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
+                          decoration: InputDecoration(
+                              labelText: 'Your Name', labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
@@ -118,8 +116,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               return null;
                             }
                           },
-                          decoration:
-                               InputDecoration(labelText: 'Your Email', labelStyle:Theme.of(context).inputDecorationTheme.labelStyle),
+                          decoration: InputDecoration(
+                              labelText: 'Your Email', labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
@@ -133,10 +131,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             }
                           },
                           controller: pass,
-                          decoration:
-                              InputDecoration(suffixIcon: IconButton(onPressed: (){setState(() {
-                                showPass = !showPass;
-                              });}, icon: Icon(!showPass ? Icons.visibility_off : Icons.visibility)),labelText: 'Password', labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
+                          decoration: InputDecoration(
+                              suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      showPass = !showPass;
+                                    });
+                                  },
+                                  icon: Icon(!showPass ? Icons.visibility_off : Icons.visibility)),
+                              labelText: 'Password',
+                              labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
                           obscureText: showPass,
                         ),
                         const SizedBox(height: 10),
@@ -149,10 +153,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               return null;
                             }
                           },
-                          decoration:  InputDecoration(suffixIcon: IconButton(onPressed: (){setState(() {
-                            showConfirmPass = !showConfirmPass;
-                          });}, icon: Icon(!showConfirmPass ? Icons.visibility_off : Icons.visibility,)),
-                              labelText: 'Confirm Password', labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
+                          decoration: InputDecoration(
+                              suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      showConfirmPass = !showConfirmPass;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    !showConfirmPass ? Icons.visibility_off : Icons.visibility,
+                                  )),
+                              labelText: 'Confirm Password',
+                              labelStyle: Theme.of(context).inputDecorationTheme.labelStyle),
                           obscureText: showConfirmPass,
                         ),
                         SizedBox(
@@ -165,18 +177,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                _auth.signUp(name: name.text, email: email.text.trim(), pass: pass.text.trim()).then((value) {
-                                  if (value != null) {
+                                _auth
+                                    .signUp(name: name.text, email: email.text.trim(), pass: pass.text.trim())
+                                    .then((userData) async {
+                                  if (userData != null) {
                                     print("After Value $isLoading");
 
                                     isLoading = false;
-
-                                    FirebaseFirestore.instance.collection("users").doc(auth.currentUser!.uid).update({"isOnline": true});
-
                                     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
-                                        builder: (context) => HomeScreen(
-                                          userData: value,
-                                        )), (route) => false);
+                                            builder: (context) => HomeScreen(
+                                                  userData: userData,
+                                                )), (route) => false);
                                   }
                                 });
                               } else {
@@ -188,8 +199,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(snackBar);
                               }
                             },
-                            child:
-                                customButton(color: CustomColor.authenticationButtonColor, text: 'Create an Account', txtColor: CustomColor.authenticationButtonText))
+                            child: customButton(
+                                color: CustomColor.authenticationButtonColor,
+                                text: 'Create an Account',
+                                txtColor: CustomColor.authenticationButtonText))
                       ],
                     )),
               ),
@@ -197,7 +210,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           : Center(
               child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children:  [
+              children: [
                 const CircularProgressIndicator(),
                 const SizedBox(
                   height: 30,

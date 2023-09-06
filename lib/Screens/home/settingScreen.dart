@@ -223,17 +223,10 @@ class _SettingScreenState extends State<SettingScreen> {
                             .doc(widget.userData.id.toString())
                             .update({"isOnline": false});
 
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const WelcomeScreen(),
-                            ));
-                        // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
-                        // builder: (context) => const WelcomeScreen(), (route) => false)
                         Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const WelcomeScreen(),
+                              builder: (context) => WelcomeScreen(),
                             ),
                             (route) => false);
                       });

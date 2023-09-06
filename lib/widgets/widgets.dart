@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 Widget circularLogo(String img){
   return Container(
@@ -31,4 +32,8 @@ Widget customButton({required Color color, required String text,required Color t
     ),
     child: Center(child: Text(text,style: TextStyle(fontSize: 24,fontWeight: FontWeight.w500, color: txtColor),)),
   );
+}
+
+showToast(String msg, Color bgColor){
+  Fluttertoast.showToast(msg: msg, backgroundColor: bgColor,toastLength: Toast.LENGTH_LONG,);
 }
