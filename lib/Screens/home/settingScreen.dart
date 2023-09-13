@@ -1,5 +1,4 @@
 import 'package:chatting_app/Helper/themes.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:chatting_app/Model/userModel.dart';
@@ -221,7 +220,7 @@ class _SettingScreenState extends State<SettingScreen> {
                         FirebaseFirestore.instance
                             .collection("users")
                             .doc(widget.userData.id.toString())
-                            .update({"isOnline": false});
+                            .update({"isOnline": false, "fcmToken" : ""});
 
                         Navigator.pushAndRemoveUntil(
                             context,

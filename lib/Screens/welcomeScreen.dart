@@ -1,8 +1,6 @@
 import 'package:chatting_app/Functionality/authentication.dart';
-import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/Screens/authentication/signUpScreen.dart';
 import 'package:chatting_app/Screens/home/home.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chatting_app/widgets/widgets.dart';
@@ -70,7 +68,7 @@ class WelcomeScreen extends StatelessWidget {
                         GestureDetector(
                             onTap: () async {
                               /// [Google Auth]
-                              GoogleSignInAccount? googleAccount = await GoogleSignIn().signIn();
+                              GoogleSignInAccount? googleAccount = await GoogleSignIn(scopes: ['profile', 'email']).signIn();
 
                               if (googleAccount != null) {
                                 await FirebaseAuth.instance.fetchSignInMethodsForEmail(googleAccount.email).then((value) async {
@@ -99,7 +97,7 @@ class WelcomeScreen extends StatelessWidget {
                                     }
                                   } else {
                                     /// [new user]
-                                    _auth.signupWithGoogle().then((value) {
+                                    _auth.signupWithGoogle(googleAccount).then((value) {
                                       if (value != null) {
                                         Navigator.pushAndRemoveUntil(
                                             context,

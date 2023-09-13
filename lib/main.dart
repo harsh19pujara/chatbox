@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Model/userModel.dart';
-import 'package:chatting_app/Screens/authentication/loginScreen.dart';
 import 'package:chatting_app/Screens/home/home.dart';
 import 'package:chatting_app/Screens/welcomeScreen.dart';
 import 'package:chatting_app/Screens/splashScreen.dart';
@@ -10,12 +10,70 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('Handling a background message ${message.messageId}');
+  showAwesomeNotification(message.data['title'], message.data['body']);
+}
+
+showAwesomeNotification(String title, String msg) async{
+  await AwesomeNotifications().createNotification(
+    content: NotificationContent(
+      id: DateTime.now().millisecond,
+      channelKey: 'basic_channel',
+      title: title,
+      body: msg,
+      groupKey: "abc",
+      wakeUpScreen: true,
+      fullScreenIntent: true,
+      autoDismissible: true,
+      category: NotificationCategory.Message,
+      locked: false,
+      displayOnForeground: true,
+    ),
+    // actionButtons: [
+    //   NotificationActionButton(
+    //     key: 'accept',
+    //     label: 'Accept',
+    //   ),
+    //   NotificationActionButton(
+    //       isDangerousOption: true,
+    //       key: 'reject',
+    //       label: 'Reject',
+    //       // autoDismissible: true,
+    //       actionType: ActionType.SilentBackgroundAction
+    //   ),
+    // ],
+  );
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  String? token = await FirebaseMessaging.instance.getToken();
+
+  await AwesomeNotifications().requestPermissionToSendNotifications();
+
+  AwesomeNotifications().initialize(
+      'resource://drawable/splash_logo',
+      [
+        NotificationChannel(
+            channelKey: 'basic_channel',
+            channelName: 'Basic Notification',
+            channelDescription: 'Hello world',
+            importance: NotificationImportance.High,
+            channelShowBadge: true,
+            vibrationPattern: highVibrationPattern
+        ),
+      ]
+  );
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  FirebaseMessaging.onMessage.listen((msg) {
+    showAwesomeNotification(msg.data['title'], msg.data['body']);
+  });
+
+
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: CustomTheme.lightTheme(),

@@ -5,8 +5,9 @@ class UserModel{
   String? email;
   String? profile;
   bool? isOnline;
+  String? fcmToken;
 
-  UserModel({required this.id, required this.name, required this.email, this.profile, this.isOnline});
+  UserModel({required this.id, required this.name, required this.email, this.profile, this.isOnline, this.fcmToken});
 
   UserModel.fromJson(Map<String,dynamic> data){
     id = data["id"];
@@ -14,6 +15,7 @@ class UserModel{
     name = data["name"];
     profile = data["profile"];
     isOnline = data["isOnline"];
+    fcmToken = data.containsKey("fcmToken") ? data["fcmToken"] : "";
   }
 
   Map<String,dynamic> toMap() => {
@@ -21,6 +23,7 @@ class UserModel{
     'name' : name,
     'email' : email,
     'profile' : profile,
-    'isOnline' : isOnline
+    'isOnline' : isOnline,
+    'fcmToken' : fcmToken
   };
 }

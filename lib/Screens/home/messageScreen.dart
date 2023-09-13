@@ -7,7 +7,6 @@ import 'package:chatting_app/Screens/home/chatScreen.dart';
 import 'package:chatting_app/Screens/home/groupChatScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class MessageScreen extends StatefulWidget {
@@ -266,7 +265,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                       width: 10,
                     ),
                     Expanded(
-                      flex: 7,
+                      flex: 8,
                       // width: 150,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -290,7 +289,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
                       width: 25,
                     ),
                     Expanded(
-                      flex: 1,
+                      flex: 3,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -435,7 +434,7 @@ class _MessageScreenState extends State<MessageScreen> with WidgetsBindingObserv
     } else if (timeHr == 1) {
       return "Yesterday";
     } else {
-      return "${time.day}/${time.month}/${time.year}";
+      return "${time.day}/${time.month}/${time.year.toString().substring(2)}";
     }
   }
 }

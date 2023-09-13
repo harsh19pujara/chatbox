@@ -1,5 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
-
+import 'package:http/http.dart' as http;
 import 'package:chatting_app/Helper/privacy.dart';
 import 'package:chatting_app/Helper/themes.dart';
 import 'package:chatting_app/Model/chatModel.dart';
@@ -9,7 +10,6 @@ import 'package:chatting_app/Screens/home/profileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
@@ -351,6 +351,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           List<MessageModel> messageList = snapshot.data!.docs.map((e) {
                             return MessageModel.fromJson(e.data());
                           }).toList();
+
 
                           return ListView.builder(
                             physics: const BouncingScrollPhysics(),
@@ -892,17 +893,17 @@ class _ChatScreenState extends State<ChatScreen> {
     if (chatData.data()!["online"][widget.searchedUser!.id.toString()] == false) {
       data = count + 1;
     }
-    print("msg count increment" + data.toString());
 
     return data;
   }
 
   sendMessage() {
     if (msgController.text.isNotEmpty) {
-      String currentMsg = MessagePrivacy.encryption(msgController.text.trim());
+      String msg = msgController.text.trim();
+      String msgEncrypted = MessagePrivacy.encryption(msgController.text.trim());
       msgController.clear();
       msgDetails = MessageModel(
-          msg: currentMsg,
+          msg: msgEncrypted,
           msgId: uuid.v1(),
           senderId: widget.currentUser.id,
           createdOn: Timestamp.now(),
@@ -924,8 +925,13 @@ class _ChatScreenState extends State<ChatScreen> {
             .doc(msgDetails!.msgId.toString())
             .set(msgDetails!.toMap())
             .then((value) async {
+
+            if(widget.searchedUser != null){
+              widget.searchedUser!.fcmToken != "" ? sendNotificationToOtherUsers(widget.searchedUser!.fcmToken!, msg, widget.searchedUser!.name!) : null;
+            }
+
           var updateData = {
-            "lastMsg": currentMsg,
+            "lastMsg": msgEncrypted,
             "lastMsgTime": msgDetails!.createdOn,
             "unreadMsg.${widget.searchedUser!.id.toString()}": await messageIncrement()
           };
@@ -933,6 +939,39 @@ class _ChatScreenState extends State<ChatScreen> {
           await FirebaseFirestore.instance.collection("chatRooms").doc(widget.chatRoom.chatRoomId.toString()).update(updateData);
         });
       }
+    }
+  }
+
+  Future<void> sendNotificationToOtherUsers(String targetUserToken, String message, String userName) async {
+    try {
+      String serverKey =
+          "AAAAod7L1hE:APA91bFFIqK7xIjtaRkOIWp2oqQCOCzPf7R7uphe5QCYn9PifKBDV9SQsw2IMi3AZZezGsxM0hxLRxF3SMhM07XF7iMQRdMYOuaAI-oMT6bCq8ZX4ZlEzxiFCRIMVSe1Lg7b878IE7Mm"; // You can find this key in the Firebase Console under "Project settings" -> "Cloud Messaging"
+      String url = 'https://fcm.googleapis.com/fcm/send';
+
+      Map<String, String> headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$serverKey',
+      };
+
+      Map<String, dynamic> data = {
+        'to': targetUserToken,
+        'data': {
+          'title': userName,
+          'body': message,
+          'click_action': 'FLUTTER_NOTIFICATION_CLICK', // Optional, customize the action when the user taps the notification
+        },
+      };
+
+      String body = jsonEncode(data);
+
+      final response = await http.post(Uri.parse(url), headers: headers, body: body);
+      if (response.statusCode == 200) {
+        print('Notification sent successfully.');
+      } else {
+        print('Failed to send notification. Error: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
     }
   }
 }

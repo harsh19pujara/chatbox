@@ -2,14 +2,17 @@ import 'package:chatting_app/Model/userModel.dart';
 import 'package:chatting_app/widgets/widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class Authentication {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   Future<UserModel?> login({required String email, required String pass}) async {
     UserModel? userData;
+    String? fcmToken = await _messaging.getToken();
 
     try {
       await FirebaseAuth.instance.fetchSignInMethodsForEmail(email).then((value) async {
@@ -23,11 +26,12 @@ class Authentication {
             await _auth.signInWithEmailAndPassword(email: email, password: pass).then((user) async {
               String uid = user.user!.uid;
 
-              DocumentSnapshot data = await FirebaseFirestore.instance.collection("users").doc(uid).get();
-              var temp  = data.data() as Map<String,dynamic>;
-              userData = UserModel.fromJson(temp);
-
-              return userData;
+              await FirebaseFirestore.instance.collection("users").doc(uid).update({"fcmToken": fcmToken}).then((value) async {
+                DocumentSnapshot data = await FirebaseFirestore.instance.collection("users").doc(uid).get();
+                var temp  = data.data() as Map<String,dynamic>;
+                userData = UserModel.fromJson(temp);
+                return userData;
+              });
             });
           }
         }else{
@@ -46,6 +50,7 @@ class Authentication {
 
   Future<UserModel?> signUp({required String name, required String email, required String pass}) async {
     UserModel? userData;
+    String? fcmToken = await _messaging.getToken();
 
     try {
       await FirebaseAuth.instance.fetchSignInMethodsForEmail(email).then((value) async {
@@ -62,7 +67,7 @@ class Authentication {
             await _auth.createUserWithEmailAndPassword(email: email, password: pass).then((user) async {
 
               String uid = user.user!.uid;
-              UserModel newUser = UserModel(id: uid, email: email, name: name, isOnline: true, profile: "");
+              UserModel newUser = UserModel(id: uid, email: email, name: name, isOnline: true, profile: "", fcmToken : fcmToken);
               await FirebaseFirestore.instance.collection("users").doc(uid).set(newUser.toMap()).then((value) {
                 print('user created');
                 userData = newUser;
@@ -78,6 +83,9 @@ class Authentication {
   }
 
   Future<UserModel?> loginWithGoogle() async {
+    String? fcmToken = await _messaging.getToken();
+
+
     print("google login");
     UserModel? user;
     try {
@@ -90,8 +98,8 @@ class Authentication {
         );
         await FirebaseAuth.instance.signInWithCredential(authCredential).then((value) async {
           await FirebaseFirestore.instance.collection("users").doc(value.user!.uid).get().then((firebaseUser) async {
-            await FirebaseFirestore.instance.collection("users").doc(value.user!.uid).update({"isOnline" : true}).then((value) {
-              user = UserModel(id: firebaseUser["id"], name: firebaseUser["name"], email: firebaseUser["email"], isOnline: true);
+            await FirebaseFirestore.instance.collection("users").doc(value.user!.uid).update({"isOnline" : true, 'fcmToken' : fcmToken}).then((value) {
+              user = UserModel(id: firebaseUser["id"], name: firebaseUser["name"], email: firebaseUser["email"], isOnline: true, fcmToken: fcmToken);
             });
           });
         });
@@ -104,11 +112,13 @@ class Authentication {
     return user;
   }
 
-  Future<UserModel?> signupWithGoogle() async{
-    print("google signup");
+  Future<UserModel?> signupWithGoogle(GoogleSignInAccount? googleAccount) async{
     UserModel? user;
+    String? fcmToken = await _messaging.getToken();
+
+    print("google signup");
+
     try {
-      GoogleSignInAccount? googleAccount = await GoogleSignIn().signIn();
       if (googleAccount != null) {
         GoogleSignInAuthentication googleAuth = await googleAccount.authentication;
         AuthCredential authCredential = GoogleAuthProvider.credential(
@@ -116,7 +126,7 @@ class Authentication {
             accessToken: googleAuth.accessToken
         );
         await FirebaseAuth.instance.signInWithCredential(authCredential).then((value) async {
-          UserModel newUser = UserModel(id: value.user!.uid, name: value.user!.displayName, email: value.user!.email, isOnline: true);
+          UserModel newUser = UserModel(id: value.user!.uid, name: value.user!.displayName, email: value.user!.email, isOnline: true, fcmToken: fcmToken);
 
           await FirebaseFirestore.instance.collection("users").doc(value.user!.uid).set(newUser.toMap()).then((firebaseUser) {
             user = newUser;
@@ -130,6 +140,7 @@ class Authentication {
     }
     return user;
   }
+
 
   Future<void> logOut() async {
     await _auth.signOut().then((value) async {

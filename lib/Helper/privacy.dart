@@ -9,7 +9,7 @@ class MessagePrivacy {
     final encryptionService = Encrypter(AES(cipherKey, mode: AESMode.cbc));
     final initVector = IV.fromUtf8(key.substring(0,16));
     final result = encryptionService.encrypt(plainText, iv: initVector);
-    print("encrypted  " + result.base64);
+    // print("encrypted  " + result.base64);
     return result.base64;
   }
 
@@ -24,7 +24,7 @@ class MessagePrivacy {
       print("decrypted  " + result);
       return result;
     } on Exception catch (e) {
-     print("error");
+     print("error $e");
      return encryptedText;
     }
 
