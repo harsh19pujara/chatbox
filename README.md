@@ -1,6 +1,8 @@
 # chatting_app
 
 A new Flutter project.
+Flutter Version :: 3.19.6
+Android SDK : API 34 (In Project Settings) 
 
 ## Getting Started
 

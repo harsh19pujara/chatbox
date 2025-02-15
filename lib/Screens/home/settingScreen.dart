@@ -28,25 +28,25 @@ class _SettingScreenState extends State<SettingScreen> {
     print("image ");
 
     if (pickedImage != null) {
-      cropImage(pickedImage);
+      // cropImage(pickedImage);
       print("image fetched");
     }
   }
 
-  cropImage(XFile pic) async {
-    CroppedFile? croppedImg = await ImageCropper().cropImage(
-      sourcePath: pic.path,
-    );
-
-    if (croppedImg != null) {
-      print("image cropped");
-      setState(() {
-        profileImage = File(croppedImg.path);
-        uploadImage();
-        Navigator.pop(context);
-      });
-    }
-  }
+  // cropImage(XFile pic) async {
+  //   CroppedFile? croppedImg = await ImageCropper().cropImage(
+  //     sourcePath: pic.path,
+  //   );
+  //
+  //   if (croppedImg != null) {
+  //     print("image cropped");
+  //     setState(() {
+  //       profileImage = File(croppedImg.path);
+  //       uploadImage();
+  //       Navigator.pop(context);
+  //     });
+  //   }
+  // }
 
   uploadImage() async {
     if (profileImage != null) {
